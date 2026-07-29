@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Papa from "papaparse";
 import CircleGraph from "./CircleGraph";
+import "./CircleGraph.css";
 
 
 function App() {

@@ -30,6 +30,17 @@ function CircleGraph({ data }) {
     Object.values(areaData).forEach(clubs => {
         clubs.sort((a, b) => a.rank - b.rank);
     });
+    const powerGroups = {};
+
+    data.forEach(club => {
+        const key = club.area + "_" + club.power;
+
+        if (!powerGroups[key]) {
+            powerGroups[key] = [];
+        }
+
+        powerGroups[key].push(club);
+    });
     const minPower = 50;
     const maxPower = 100;
     const nodes = data.map(club => {
@@ -41,16 +52,23 @@ function CircleGraph({ data }) {
         }
 
 
+        const samePowerClubs =
+            powerGroups[club.area + "_" + club.power];
 
-        const clubsInArea = areaData[club.area];
+        const index = samePowerClubs.indexOf(club);
 
-        const index = clubsInArea.indexOf(club);
+        let baseAngle;
 
-        const baseAngle =
-            range[0] -
-            (index / (clubsInArea.length - 1))
-            *
-            (range[0] - range[1]);
+        if (samePowerClubs.length === 1) {
+            baseAngle =
+                (range[0] + range[1]) / 2;
+        } else {
+            baseAngle =
+                range[0] -
+                (index / (samePowerClubs.length - 1))
+                *
+                (range[0] - range[1]);
+        }
 
 
         const hash =
@@ -80,22 +98,28 @@ function CircleGraph({ data }) {
 
         const rad =
             angle * Math.PI / 180;
+        let powerClass;
 
+        if (club.power >= 95) {
+            powerClass = "power6";
+        } else if (club.power >= 90) {
+            powerClass = "power5";
+        } else if (club.power >= 80) {
+            powerClass = "power4";
+        } else if (club.power >= 70) {
+            powerClass = "power3";
+        } else if (club.power >= 60) {
+            powerClass = "power2";
+        } else {
+            powerClass = "power1";
+        }
 
 
         return {
-
             ...club,
-
-            x:
-                centerX +
-                radius * Math.cos(rad),
-
-
-            y:
-                centerY -
-                radius * Math.sin(rad)
-
+            powerClass,
+            x: centerX + radius * Math.cos(rad),
+            y: centerY - radius * Math.sin(rad)
         };
 
 
@@ -142,21 +166,13 @@ function CircleGraph({ data }) {
                     return (
 
                         <circle
-
                             key={power}
-
                             cx={centerX}
-
                             cy={centerY}
-
                             r={r}
-
                             fill="none"
-
                             stroke="gray"
-
                             strokeDasharray="5 5"
-
                         />
 
                     )
@@ -220,29 +236,13 @@ function CircleGraph({ data }) {
             {
                 nodes.map((club, index) => (
 
-
                     <circle
-
                         key={index}
-
                         cx={club.x}
-
                         cy={club.y}
-
-
-                        // 選手数でサイズ変更
-
-                        r={
-                            5 +
-                            club.playerCount * 1.5
-                        }
-
-
-                        fill="steelblue"
-
+                        r={5 + club.playerCount * 1.5}
+                        className={club.powerClass}
                         opacity="0.7"
-
-
                     >
 
                         <title>
