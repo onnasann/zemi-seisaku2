@@ -34,6 +34,7 @@ function CircleGraph({ data, visiblePower, togglePower }) {
     Object.values(areaData).forEach(clubs => {
         clubs.sort((a, b) => a.rank - b.rank);
     });
+
     const powerGroups = {};
 
     data.forEach(club => {
@@ -45,6 +46,7 @@ function CircleGraph({ data, visiblePower, togglePower }) {
 
         powerGroups[key].push(club);
     });
+
     const minPower = 50;
     const maxPower = 100;
     const nodes = data.map(club => {
@@ -55,33 +57,35 @@ function CircleGraph({ data, visiblePower, togglePower }) {
             return null;
         }
 
+        const baseAngle = (range[0] + range[1]) / 2;
+        const digit = club.rank % 10;
 
-        const samePowerClubs =
-            powerGroups[club.area + "_" + club.power];
+        // 左右の基本位置
+        let offset;
 
-        const index = samePowerClubs.indexOf(club);
-
-        let baseAngle;
-
-        if (samePowerClubs.length === 1) {
-            baseAngle =
-                (range[0] + range[1]) / 2;
+        if (digit <= 4) {
+            // 0〜4 左側
+            offset = -30 + digit * 5;
         } else {
-            baseAngle =
-                range[0] -
-                (index / (samePowerClubs.length - 1))
-                *
-                (range[0] - range[1]);
+            // 5〜9 右側
+            offset = 5 + (digit - 5) * 5;
         }
 
 
-        const hash =
-            club.club
-                .split("")
-                .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+        // パワーによって散らす範囲を変更
+        let spread;
 
-        const offset = (hash % 40) - 20;
+        if (club.power < 65) {
+            spread = 18;       // 中心付近 → 大きく散らす
+        } else if (club.power < 80) {
+            spread = 10;
+        } else {
+            spread = 5;        // 外側 → あまり散らさない
+        }
 
+
+        // ランクから決まる疑似乱数
+        offset += Math.sin(club.rank * 17) * spread;
         const angle = Math.max(
             range[1] + 3,
             Math.min(
@@ -91,15 +95,9 @@ function CircleGraph({ data, visiblePower, togglePower }) {
         );
 
         const radius =
-
-            ((club.power - minPower)
-                /
+            ((club.power - minPower) /
                 (maxPower - minPower))
-            *
-            maxRadius;
-
-
-
+            * maxRadius;
         const rad =
             angle * Math.PI / 180;
         let powerClass;
