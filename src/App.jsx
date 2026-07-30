@@ -7,8 +7,28 @@ import "./CircleGraph.css";
 function App() {
 
     const [data, setData] = useState([]);
+    const [visiblePower, setVisiblePower] = useState([
+        "power6",
+        "power5",
+        "power4",
+        "power3",
+        "power2",
+        "power1"
+    ]);
+    const togglePower = (power) => {
 
+        if (visiblePower.includes(power)) {
+            setVisiblePower(
+                visiblePower.filter(p => p !== power)
+            );
+        } else {
+            setVisiblePower([
+                ...visiblePower,
+                power
+            ]);
+        }
 
+    };
     useEffect(() => {
 
         fetch("/soccer_players.csv")
@@ -90,8 +110,11 @@ function App() {
                 ワールドカップ選手所属クラブ分析
             </h1>
 
-
-            <CircleGraph data={data} />
+            <CircleGraph
+                data={data}
+                visiblePower={visiblePower}
+                togglePower={togglePower}
+            />
 
 
         </div>

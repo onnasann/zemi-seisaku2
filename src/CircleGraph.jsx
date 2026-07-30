@@ -1,7 +1,11 @@
-function CircleGraph({ data }) {
+import { useState } from "react";
+import Legend from "./Legend";
+import BackCircle from "./BackCircle";
+
+function CircleGraph({ data, visiblePower, togglePower }) {
     const width = window.innerWidth;
     const height = window.innerHeight * 0.8;
-
+    const [hoverClub, setHoverClub] = useState(null);
     const centerX = width / 2;
     const centerY = height - 50;
 
@@ -9,14 +13,14 @@ function CircleGraph({ data }) {
 
     // 半円5分割
     const areas = {
-        "南アメリカ": [180, 145],
-        "北中米": [145, 115],
+        "北中米": [180, 150],
+        "南アメリカ": [150, 115],
         "ヨーロッパ": [115, 50],
-        "アフリカ": [50, 25],
-        "アジア": [25, 0]
+        "アジア": [50, 20],
+        "アフリカ": [20, 0]
     };
 
-    const maxRank = Math.max(...data.map(club => club.rank));
+
 
     const areaData = {};
 
@@ -126,154 +130,73 @@ function CircleGraph({ data }) {
     }).filter(Boolean);
 
 
-
+    const boundaryAngles = [
+        ...Object.values(areas).map(range => range[0]),
+        0
+    ];
 
 
     return (
+        <div className="graph-container">
+            <svg
+                width={width}
+                height={height}
+            >
 
-        <svg
-            width={width}
-            height={height}
-        >
+                <BackCircle
+                    centerX={centerX}
+                    centerY={centerY}
+                    maxRadius={maxRadius}
+                    minPower={minPower}
+                    maxPower={maxPower}
+                    areas={areas}
+                    boundaryAngles={boundaryAngles}
+                />
+                {/* クラブの点 */}
+
+                {
+                    nodes.map((club, index) => (
+                        <circle
+                            key={index}
+                            cx={club.x}
+                            cy={club.y}
+                            r={5 + club.playerCount * 1.5}
+                            className={club.powerClass}
+                            style={{
+                                opacity: visiblePower.includes(club.powerClass)
+                                    ? 0.7
+                                    : 0,
+
+                                transition: "opacity 0.5s ease",
+
+                                pointerEvents: visiblePower.includes(club.powerClass)
+                                    ? "auto"
+                                    : "none"
+                            }}
+                            onMouseEnter={() => setHoverClub(club)}
+                            onMouseLeave={() => setHoverClub(null)}
+                        >
+                        </circle>
+                    ))
+                }
 
 
-            {/* 外側半円 */}
-
-            <path
-                d={`M ${centerX - maxRadius} ${centerY}A ${maxRadius} ${maxRadius} 0 0 1
-                    ${centerX + maxRadius} ${centerY}`}
-                fill="none"
-                stroke="black"
-                strokeWidth="3"
+            </svg>
+            {hoverClub && (
+                <div className="tooltip">
+                    <h3>{hoverClub.club}</h3>
+                    <p>選手数：{hoverClub.playerCount}</p>
+                    <p>チームパワー：{hoverClub.power}</p>
+                    <p>ランキング：{hoverClub.rank}</p>
+                    <p>エリア：{hoverClub.area}</p>
+                </div>
+            )}
+            <Legend
+                visiblePower={visiblePower}
+                togglePower={togglePower}
             />
 
-
-
-            {/* 目盛り円 */}
-
-            {
-                [60, 70, 80, 90, 100].map(power => {
-
-
-                    const r =
-                        ((power - minPower)
-                            /
-                            (maxPower - minPower))
-                        *
-                        maxRadius;
-
-
-                    return (
-
-                        <circle
-                            key={power}
-                            cx={centerX}
-                            cy={centerY}
-                            r={r}
-                            fill="none"
-                            stroke="gray"
-                            strokeDasharray="5 5"
-                        />
-
-                    )
-
-                })
-            }
-
-
-
-
-            {/* エリア分割線 */}
-
-            {
-                Object.values(areas)
-                    .map((range, index) => {
-
-
-                        const angle =
-                            range[0]
-                            *
-                            Math.PI / 180;
-
-
-
-                        return (
-
-                            <line
-
-                                key={index}
-
-                                x1={centerX}
-
-                                y1={centerY}
-
-                                x2={
-                                    centerX +
-                                    maxRadius *
-                                    Math.cos(angle)
-                                }
-
-                                y2={
-                                    centerY -
-                                    maxRadius *
-                                    Math.sin(angle)
-                                }
-
-                                stroke="black"
-
-                            />
-
-                        )
-
-                    })
-
-            }
-
-
-
-            {/* クラブの点 */}
-
-            {
-                nodes.map((club, index) => (
-
-                    <circle
-                        key={index}
-                        cx={club.x}
-                        cy={club.y}
-                        r={5 + club.playerCount * 1.5}
-                        className={club.powerClass}
-                        opacity="0.7"
-                    >
-
-                        <title>
-
-                            {club.club}
-
-                            {"\n"}
-
-                            選手数：
-                            {club.playerCount}
-
-                            {"\n"}
-
-                            チームパワー：
-                            {club.power}
-
-
-                        </title>
-
-
-                    </circle>
-
-
-                ))
-            }
-
-
-
-        </svg>
-
-
+        </div>
     );
 
 
