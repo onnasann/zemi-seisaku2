@@ -79,6 +79,10 @@
     transition: transform 0.25s ease;
 }
 
+.player-filter input {
+    width: 220px;
+    cursor: pointer;
+}
 
 
 .legend-color.power6 {

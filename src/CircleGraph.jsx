@@ -54,6 +54,8 @@ function CircleGraph({ data, visiblePower, togglePower }) {
     });
     const minPower = 50;
     const maxPower = 100;
+
+    const [minPlayers, setMinPlayers] = useState(1);
     const nodes = data.map(club => {
         const area =
             (club.area === "オセアニア" || club.area === "アジア")
@@ -170,15 +172,19 @@ function CircleGraph({ data, visiblePower, togglePower }) {
                             r={5 + club.playerCount * 1.5}
                             className={club.powerClass}
                             style={{
-                                opacity: visiblePower.includes(club.powerClass)
-                                    ? 0.7
-                                    : 0,
+                                opacity:
+                                    visiblePower.includes(club.powerClass) &&
+                                        club.playerCount >= minPlayers
+                                        ? 0.7
+                                        : 0,
 
-                                transition: "opacity 0.5s ease",
+                                transition: "opacity 0.5s ease, r 0.5s ease",
 
-                                pointerEvents: visiblePower.includes(club.powerClass)
-                                    ? "auto"
-                                    : "none"
+                                pointerEvents:
+                                    visiblePower.includes(club.powerClass) &&
+                                        club.playerCount >= minPlayers
+                                        ? "auto"
+                                        : "none"
                             }}
                             onMouseEnter={() => setHoverClub(club)}
                             onMouseLeave={() => setHoverClub(null)}
@@ -202,6 +208,19 @@ function CircleGraph({ data, visiblePower, togglePower }) {
                 visiblePower={visiblePower}
                 togglePower={togglePower}
             />
+            <div className="player-filter">
+                <label>出場選手数 {minPlayers} 人以上</label>
+
+                <input
+                    type="range"
+                    min="1"
+                    max="15"
+                    value={minPlayers}
+                    onChange={(e) =>
+                        setMinPlayers(Number(e.target.value))
+                    }
+                />
+            </div>
 
         </div>
     );
