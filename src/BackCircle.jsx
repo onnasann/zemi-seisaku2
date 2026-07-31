@@ -85,10 +85,15 @@ function BackCircle({
 
             {/* エリア名 */}
             {Object.entries(areas).map(([name, range]) => {
-                const angle = (range[0] + range[1]) / 2;
-                const rad = angle * Math.PI / 180;
-                const labelRadius = maxRadius + 40;
 
+                let angle = (range[0] + range[1]) / 2;
+                const rad = angle * Math.PI / 180;
+                let labelRadius = maxRadius + 40;
+
+                if (name === "アジア・オセアニア") {
+                    angle -= 10;
+                    labelRadius = maxRadius + 70;
+                }
                 return (
                     <text
                         key={name}
@@ -99,7 +104,26 @@ function BackCircle({
                         fontSize="18"
                         fontWeight="bold"
                     >
-                        {name}
+                        {
+                            name === "アジア・オセアニア"
+                                ? (
+                                    <>
+                                        <tspan
+                                            x={centerX + labelRadius * Math.cos(rad)}
+                                            dy="-10"
+                                        >
+                                            アジア
+                                        </tspan>
+                                        <tspan
+                                            x={centerX + labelRadius * Math.cos(rad)}
+                                            dy="25"
+                                        >
+                                            オセアニア
+                                        </tspan>
+                                    </>
+                                )
+                                : name
+                        }
                     </text>
                 );
             })}

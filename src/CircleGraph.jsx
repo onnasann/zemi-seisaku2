@@ -38,7 +38,13 @@ function CircleGraph({ data, visiblePower, togglePower }) {
     const powerGroups = {};
 
     data.forEach(club => {
-        const key = club.area + "_" + club.power;
+
+        const area =
+            (club.area === "オセアニア" || club.area === "アジア")
+                ? "アジア・オセアニア"
+                : club.area;
+
+        const key = area + "_" + club.power;
 
         if (!powerGroups[key]) {
             powerGroups[key] = [];
@@ -46,13 +52,16 @@ function CircleGraph({ data, visiblePower, togglePower }) {
 
         powerGroups[key].push(club);
     });
-
     const minPower = 50;
     const maxPower = 100;
     const nodes = data.map(club => {
-        const range =
-            areas[club.area];
+        const area =
+            (club.area === "オセアニア" || club.area === "アジア")
+                ? "アジア・オセアニア"
+                : club.area;
 
+        const range =
+            areas[area];
         if (!range) {
             return null;
         }
