@@ -11,7 +11,7 @@ function Legend({ visiblePower, togglePower }) {
 
     return (
         <div className="legend">
-            <h3>チームパワー</h3>
+            <h3>クラブパワー</h3>
 
             {items.map((item) => (
                 <div
