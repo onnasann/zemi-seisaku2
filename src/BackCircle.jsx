@@ -44,7 +44,6 @@ function BackCircle({
                             y2={centerY}
                             stroke="gray"
                         />
-
                         <text
                             x={centerX - r - 12}
                             y={centerY + 15}
