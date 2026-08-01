@@ -15,6 +15,7 @@ function App() {
         "power2",
         "power1"
     ]);
+    const [searchText, setSearchText] = useState("");
     const togglePower = (power) => {
 
         if (visiblePower.includes(power)) {
@@ -106,14 +107,24 @@ function App() {
 
         <div>
 
-            <h1>
-                ワールドカップ選手所属クラブ分析
+            <h1 className="title">
+                最強クラブ分析
             </h1>
+            <div className="search-box">
+                <input
+                    type="text"
+                    placeholder="クラブ名を検索"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                />
+            </div>
+
 
             <CircleGraph
                 data={data}
                 visiblePower={visiblePower}
                 togglePower={togglePower}
+                searchText={searchText}
             />
 
 

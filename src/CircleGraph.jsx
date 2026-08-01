@@ -2,7 +2,7 @@ import { useState } from "react";
 import Legend from "./Legend";
 import BackCircle from "./BackCircle";
 
-function CircleGraph({ data, visiblePower, togglePower }) {
+function CircleGraph({ data, visiblePower, togglePower, searchText }) {
     const width = window.innerWidth;
     const height = window.innerHeight * 0.8;
     const [hoverClub, setHoverClub] = useState(null);
@@ -55,8 +55,14 @@ function CircleGraph({ data, visiblePower, togglePower }) {
     const minPower = 50;
     const maxPower = 100;
 
+    const filteredData = data.filter(club =>
+        club.club
+            .toLowerCase()
+            .includes(searchText.toLowerCase())
+    );
+
     const [minPlayers, setMinPlayers] = useState(1);
-    const nodes = data.map(club => {
+    const nodes = filteredData.map(club => {
         const area =
             (club.area === "オセアニア" || club.area === "アジア")
                 ? "アジア・オセアニア"

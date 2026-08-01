@@ -108,3 +108,19 @@
 .legend-color.power1 {
     background: #313695;
 }
+
+.title {
+    margin-left: 40px;
+}
+
+.search-box {
+    margin-left: 40px;
+}
+
+.search-box input {
+    width: 250px;
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 1px solid #aaa;
+}
