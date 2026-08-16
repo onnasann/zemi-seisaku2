@@ -177,6 +177,19 @@ function CircleGraph({ data, visiblePower, togglePower, searchText }) {
                             cy={club.y}
                             r={5 + club.playerCount * 1.5}
                             className={club.powerClass}
+
+                            stroke={
+                                hoverClub?.club === club.club
+                                    ? "black"
+                                    : "none"
+                            }
+
+                            strokeWidth={
+                                hoverClub?.club === club.club
+                                    ? 4
+                                    : 0
+                            }
+
                             style={{
                                 opacity:
                                     visiblePower.includes(club.powerClass) &&
@@ -184,7 +197,7 @@ function CircleGraph({ data, visiblePower, togglePower, searchText }) {
                                         ? 0.7
                                         : 0,
 
-                                transition: "opacity 0.5s ease, r 0.5s ease",
+                                transition: "opacity 0.5s ease",
 
                                 pointerEvents:
                                     visiblePower.includes(club.powerClass) &&
@@ -192,10 +205,10 @@ function CircleGraph({ data, visiblePower, togglePower, searchText }) {
                                         ? "auto"
                                         : "none"
                             }}
+
                             onMouseEnter={() => setHoverClub(club)}
                             onMouseLeave={() => setHoverClub(null)}
-                        >
-                        </circle>
+                        />
                     ))
                 }
 
