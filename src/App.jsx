@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import Papa from "papaparse";
-import CircleGraph from "./CircleGraph";
+import CircleGraph from "./components/CircleGraph";
 import "./CircleGraph.css";
-
 
 function App() {
 
+    // クラブごとのデータ
     const [data, setData] = useState([]);
+
+    // 選手ごとのデータ
+    const [players, setPlayers] = useState([]);
+
     const [visiblePower, setVisiblePower] = useState([
         "power6",
         "power5",
@@ -15,21 +19,30 @@ function App() {
         "power2",
         "power1"
     ]);
+
     const [searchText, setSearchText] = useState("");
+
     const togglePower = (power) => {
 
         if (visiblePower.includes(power)) {
+
             setVisiblePower(
-                visiblePower.filter(p => p !== power)
+                visiblePower.filter(
+                    p => p !== power
+                )
             );
+
         } else {
+
             setVisiblePower([
                 ...visiblePower,
                 power
             ]);
+
         }
 
     };
+
     useEffect(() => {
 
         fetch("/soccer_players.csv")
@@ -37,27 +50,29 @@ function App() {
             .then(csv => {
 
                 Papa.parse(csv, {
+
                     header: true,
 
                     complete: (result) => {
 
-                        const clubs = {};
+                        // 選手データを保存
+                        setPlayers(result.data);
 
+                        const clubs = {};
 
                         result.data.forEach(player => {
 
                             const club =
                                 player["所属チーム名"];
 
-
                             if (!club) {
                                 return;
                             }
 
-
                             if (!clubs[club]) {
 
                                 clubs[club] = {
+
                                     club: club,
 
                                     playerCount: 0,
@@ -70,24 +85,24 @@ function App() {
                                         player["チームランキング"]
                                     ),
 
-                                    area: player["エリア"]
+                                    area:
+                                        player["エリア"]
                                 };
-                            }
 
+                            }
 
                             clubs[club].playerCount++;
 
                         });
 
+                        const clubList =
+                            Object.values(clubs);
 
-                        const clubList = Object.values(clubs);
-
-
-                        // チームランキングが小さい順に並べる
+                        // ランキング順
                         clubList.sort(
-                            (a, b) => a.rank - b.rank
+                            (a, b) =>
+                                a.rank - b.rank
                         );
-
 
                         setData(clubList);
 
@@ -95,13 +110,9 @@ function App() {
 
                 });
 
-
             });
 
-
     }, []);
-
-
 
     return (
 
@@ -110,29 +121,19 @@ function App() {
             <h1 className="title">
                 最強クラブ分析
             </h1>
-            <div className="search-box">
-                <input
-                    type="text"
-                    placeholder="クラブ名を検索"
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                />
-            </div>
-
 
             <CircleGraph
                 data={data}
+                players={players}
                 visiblePower={visiblePower}
                 togglePower={togglePower}
                 searchText={searchText}
             />
-
 
         </div>
 
     );
 
 }
-
 
 export default App;
