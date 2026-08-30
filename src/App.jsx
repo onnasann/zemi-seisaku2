@@ -8,13 +8,9 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 
 import { lightTheme } from "./theme";
-import Header from "./components/Header";
 import FilterControls from "./components/FilterControls";
 import CircleGraph from "./components/CircleGraph";
-import ClubTable from "./components/ClubTable";
-import InsightsView from "./components/InsightsView";
 import ClubDetail from "./components/ClubDetail";
-import GuideDialog from "./components/GuideDialog";
 import { areaConfig, normalizeArea } from "./data/areas";
 
 import "./CircleGraph.css";
@@ -26,10 +22,9 @@ function App() {
     const [data, setData] = useState([]);
     const [players, setPlayers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [regressionModel, setRegressionModel] = useState(null);
 
     // ========================================
-    // フィルター & 表示状態
+    // フィルター状態
     // ========================================
     const [searchText, setSearchText] = useState("");
     const [selectedAreas, setSelectedAreas] = useState([
@@ -40,14 +35,11 @@ function App() {
         "アフリカ"
     ]);
     const [minPlayers, setMinPlayers] = useState(1);
-    const [costFilter, setCostFilter] = useState("all"); // 'all' | 'high' | 'low'
-    const [activeTab, setActiveTab] = useState(0); // 0: Radar, 1: Table, 2: Insights
 
     // ========================================
-    // ダイアログ & ドロワー
+    // クラブ詳細パネル
     // ========================================
     const [selectedClub, setSelectedClub] = useState(null);
-    const [guideOpen, setGuideOpen] = useState(false);
 
     // ========================================
     // CSVデータの読み込み & 回帰分析
@@ -119,13 +111,6 @@ function App() {
                             const slope = denominator === 0 ? 0 : numerator / denominator;
                             const intercept = meanPlayers - slope * meanPower;
 
-                            setRegressionModel({
-                                slope,
-                                intercept,
-                                meanPower,
-                                meanPlayers
-                            });
-
                             const enrichedList = clubList.map((c) => {
                                 const predicted = slope * c.power + intercept;
                                 const costPerf = c.playerCount - predicted;
@@ -175,14 +160,12 @@ function App() {
         setSearchText("");
         setSelectedAreas(Object.keys(areaConfig));
         setMinPlayers(1);
-        setCostFilter("all");
     };
 
     const isFiltered =
         Boolean(searchText) ||
         selectedAreas.length < Object.keys(areaConfig).length ||
-        minPlayers > 1 ||
-        costFilter !== "all";
+        minPlayers > 1;
 
     // エリア別クラブ件数
     const areaCounts = useMemo(() => {
@@ -202,8 +185,6 @@ function App() {
         return data.filter((club) => {
             if (!selectedAreas.includes(club.normalizedArea)) return false;
             if (club.playerCount < minPlayers) return false;
-            if (costFilter === "high" && club.costPerformance <= 0) return false;
-            if (costFilter === "low" && club.costPerformance >= 0) return false;
             if (searchText) {
                 const q = searchText.toLowerCase();
                 const matchClub = club.club.toLowerCase().includes(q);
@@ -212,7 +193,7 @@ function App() {
             }
             return true;
         });
-    }, [data, selectedAreas, minPlayers, costFilter, searchText]);
+    }, [data, selectedAreas, minPlayers, searchText]);
 
     const totalClubs = data.length;
     const totalPlayers = players.length;
@@ -233,18 +214,8 @@ function App() {
         <ThemeProvider theme={lightTheme}>
             <CssBaseline />
 
-            {/* ヘッダー */}
-            <Header
-                totalClubs={totalClubs}
-                totalPlayers={totalPlayers}
-                avgPower={avgPower}
-                onOpenGuide={() => setGuideOpen(true)}
-                onResetFilters={handleResetFilters}
-                isFiltered={isFiltered}
-            />
-
-            <Container maxWidth="xl" sx={{ py: 3, px: { xs: 2, md: 3 } }}>
-                {/* コントロールバー */}
+            <Container maxWidth="xl" sx={{ py: 2, px: { xs: 1.5, md: 3 } }}>
+                {/* フィルターバー */}
                 <FilterControls
                     searchText={searchText}
                     setSearchText={setSearchText}
@@ -253,16 +224,16 @@ function App() {
                     toggleAllAreas={toggleAllAreas}
                     minPlayers={minPlayers}
                     setMinPlayers={setMinPlayers}
-                    costFilter={costFilter}
-                    setCostFilter={setCostFilter}
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
                     matchedCount={filteredData.length}
                     totalCount={totalClubs}
+                    totalPlayers={totalPlayers}
+                    avgPower={avgPower}
                     areaCounts={areaCounts}
+                    isFiltered={isFiltered}
+                    onResetFilters={handleResetFilters}
                 />
 
-                {/* メインコンテンツ */}
+                {/* メイン半円グラフ */}
                 {loading ? (
                     <Box
                         sx={{
@@ -274,46 +245,23 @@ function App() {
                             gap: 2
                         }}
                     >
-                        <CircularProgress color="primary" size={40} />
+                        <CircularProgress color="primary" size={36} />
                         <Typography variant="body2" sx={{ color: "#64748b" }}>
                             データを読み込み中...
                         </Typography>
                     </Box>
                 ) : (
-                    <>
-                        {/* Tab 0: 半円グラフ */}
-                        {activeTab === 0 && (
-                            <CircleGraph
-                                data={data}
-                                players={players}
-                                selectedAreas={selectedAreas}
-                                toggleArea={toggleArea}
-                                areaCounts={areaCounts}
-                                minPlayers={minPlayers}
-                                costFilter={costFilter}
-                                searchText={searchText}
-                                selectedClub={selectedClub}
-                                setSelectedClub={setSelectedClub}
-                            />
-                        )}
-
-                        {/* Tab 1: クラブ一覧 */}
-                        {activeTab === 1 && (
-                            <ClubTable
-                                data={filteredData}
-                                onSelectClub={(club) => setSelectedClub(club)}
-                            />
-                        )}
-
-                        {/* Tab 2: 分析インサイト */}
-                        {activeTab === 2 && (
-                            <InsightsView
-                                data={data}
-                                players={players}
-                                onSelectClub={(club) => setSelectedClub(club)}
-                            />
-                        )}
-                    </>
+                    <CircleGraph
+                        data={data}
+                        players={players}
+                        selectedAreas={selectedAreas}
+                        toggleArea={toggleArea}
+                        areaCounts={areaCounts}
+                        minPlayers={minPlayers}
+                        searchText={searchText}
+                        selectedClub={selectedClub}
+                        setSelectedClub={setSelectedClub}
+                    />
                 )}
             </Container>
 
@@ -325,13 +273,6 @@ function App() {
                     onClose={() => setSelectedClub(null)}
                 />
             )}
-
-            {/* ガイドモーダル */}
-            <GuideDialog
-                open={guideOpen}
-                onClose={() => setGuideOpen(false)}
-                regressionModel={regressionModel}
-            />
         </ThemeProvider>
     );
 }

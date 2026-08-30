@@ -2,10 +2,33 @@ function BackCircle({
     centerX,
     centerY,
     maxRadius,
-    minPower,
-    maxPower
+    minPower = 50,
+    maxPower = 100,
+    minCost = -3.76,
+    maxCost = 14.25
 }) {
     const powers = [60, 70, 80, 90, 100];
+
+    // コスパ度の境界線（境界値の定義）
+    const costBoundaries = [
+        { value: 10, label: "コスパ +10" },
+        { value: 5, label: "コスパ +5" },
+        { value: 2, label: "コスパ +2" },
+        { value: 0, label: "コスパ 0（基準）", isBase: true },
+        { value: -2, label: "コスパ -2" }
+    ];
+
+    // コスパ度から角度への変換（nodePosition.jsと完全一致）
+    const getAngle = (cost) => {
+        if (cost > 0) {
+            const ratio = maxCost > 0 ? cost / maxCost : 0;
+            return 91 + Math.min(1, Math.max(0, ratio)) * 82;
+        } else if (cost < 0) {
+            const ratio = minCost < 0 ? Math.abs(cost) / Math.abs(minCost) : 0;
+            return 89 - Math.min(1, Math.max(0, ratio)) * 82;
+        }
+        return 90;
+    };
 
     return (
         <g className="back-circle-group">
@@ -19,28 +42,6 @@ function BackCircle({
                     Z
                 `}
                 fill="#ffffff"
-            />
-
-            {/* 左側（高コスパゾーン）うっすらグリーン */}
-            <path
-                d={`
-                    M ${centerX - maxRadius} ${centerY}
-                    A ${maxRadius} ${maxRadius} 0 0 1 ${centerX} ${centerY - maxRadius}
-                    L ${centerX} ${centerY}
-                    Z
-                `}
-                fill="rgba(22, 163, 74, 0.03)"
-            />
-
-            {/* 右側（低コスパゾーン）うっすらアンバー */}
-            <path
-                d={`
-                    M ${centerX} ${centerY - maxRadius}
-                    A ${maxRadius} ${maxRadius} 0 0 1 ${centerX + maxRadius} ${centerY}
-                    L ${centerX} ${centerY}
-                    Z
-                `}
-                fill="rgba(217, 119, 6, 0.03)"
             />
 
             {/* ==================================
@@ -67,20 +68,7 @@ function BackCircle({
             />
 
             {/* ==================================
-                中心のコスパ基準線（垂直破線）
-            ================================== */}
-            <line
-                x1={centerX}
-                y1={centerY}
-                x2={centerX}
-                y2={centerY - maxRadius}
-                stroke="#94a3b8"
-                strokeWidth="1.5"
-                strokeDasharray="4 4"
-            />
-
-            {/* ==================================
-                パワー同心円目盛り
+                パワー同心円目盛り (60, 70, 80, 90, 100)
             ================================== */}
             {powers.map((power) => {
                 const r = ((power - minPower) / (maxPower - minPower)) * maxRadius;
@@ -106,7 +94,7 @@ function BackCircle({
                             width="28"
                             height="18"
                             rx="4"
-                            fill="#f1f5f9"
+                            fill="#f8fafc"
                             stroke="#cbd5e1"
                             strokeWidth="1"
                         />
@@ -129,7 +117,7 @@ function BackCircle({
                             width="28"
                             height="18"
                             rx="4"
-                            fill="#f1f5f9"
+                            fill="#f8fafc"
                             stroke="#cbd5e1"
                             strokeWidth="1"
                         />
@@ -163,93 +151,63 @@ function BackCircle({
             </text>
 
             {/* ==================================
-                コスパ基準ヘッダーラベル
+                コスパ度 境界線 & ラベル
             ================================== */}
-            <g transform={`translate(${centerX}, ${centerY - maxRadius - 12})`}>
-                <rect
-                    x="-60"
-                    y="-12"
-                    width="120"
-                    height="22"
-                    rx="6"
-                    fill="#f8fafc"
-                    stroke="#cbd5e1"
-                    strokeWidth="1"
-                />
-                <text
-                    x="0"
-                    y="3"
-                    textAnchor="middle"
-                    fontSize="11"
-                    fontWeight="700"
-                    fill="#475569"
-                    fontFamily="Inter, sans-serif"
-                >
-                    コスパ基準（予測値）
-                </text>
-            </g>
+            {costBoundaries.map((boundary) => {
+                const angle = getAngle(boundary.value);
+                const rad = (angle * Math.PI) / 180;
 
-            {/* ==================================
-                左側：高コスパラベル
-            ================================== */}
-            <g
-                transform={`translate(${centerX - maxRadius * 0.6}, ${
-                    centerY - maxRadius * 0.2
-                })`}
-            >
-                <rect
-                    x="-75"
-                    y="-14"
-                    width="150"
-                    height="28"
-                    rx="6"
-                    fill="#f0fdf4"
-                    stroke="#bbf7d0"
-                    strokeWidth="1"
-                />
-                <text
-                    x="0"
-                    y="4"
-                    textAnchor="middle"
-                    fontSize="12"
-                    fontWeight="700"
-                    fill="#15803d"
-                    fontFamily="Inter, sans-serif"
-                >
-                    高コスパ（選手多数）
-                </text>
-            </g>
+                // 境界線の終点（外周）
+                const endX = centerX + maxRadius * Math.cos(rad);
+                const endY = centerY - maxRadius * Math.sin(rad);
 
-            {/* ==================================
-                右側：低コスパラベル
-            ================================== */}
-            <g
-                transform={`translate(${centerX + maxRadius * 0.6}, ${
-                    centerY - maxRadius * 0.2
-                })`}
-            >
-                <rect
-                    x="-75"
-                    y="-14"
-                    width="150"
-                    height="28"
-                    rx="6"
-                    fill="#fffbeb"
-                    stroke="#fde68a"
-                    strokeWidth="1"
-                />
-                <text
-                    x="0"
-                    y="4"
-                    textAnchor="middle"
-                    fontSize="12"
-                    fontWeight="700"
-                    fill="#b45309"
-                    fontFamily="Inter, sans-serif"
-                >
-                    低コスパ（選手少数）
-                </text>
-            </g>
+                // 外側のラベル位置
+                const labelRadius = maxRadius + 16;
+                const labelX = centerX + labelRadius * Math.cos(rad);
+                const labelY = centerY - labelRadius * Math.sin(rad);
+
+                const isBase = boundary.isBase;
+
+                return (
+                    <g key={boundary.value}>
+                        {/* 放射状の境界線 */}
+                        <line
+                            x1={centerX}
+                            y1={centerY}
+                            x2={endX}
+                            y2={endY}
+                            stroke={isBase ? "#475569" : "#94a3b8"}
+                            strokeWidth={isBase ? 2 : 1.2}
+                            strokeDasharray={isBase ? "none" : "3 3"}
+                        />
+
+                        {/* 境界値ラベル */}
+                        <g transform={`translate(${labelX}, ${labelY})`}>
+                            <rect
+                                x="-36"
+                                y="-10"
+                                width="72"
+                                height="20"
+                                rx="4"
+                                fill="#ffffff"
+                                stroke={isBase ? "#475569" : "#cbd5e1"}
+                                strokeWidth={isBase ? 1.5 : 1}
+                            />
+                            <text
+                                x="0"
+                                y="4"
+                                textAnchor="middle"
+                                fontSize="9.5"
+                                fontWeight={isBase ? 800 : 600}
+                                fill={isBase ? "#0f172a" : "#475569"}
+                                fontFamily="Inter, sans-serif"
+                            >
+                                {boundary.label}
+                            </text>
+                        </g>
+                    </g>
+                );
+            })}
         </g>
     );
 }

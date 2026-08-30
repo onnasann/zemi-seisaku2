@@ -4,7 +4,6 @@ function ClubCircle({
     club,
     selectedAreas,
     minPlayers,
-    costFilter,
     searchText,
     hoverClub,
     setHoverClub,
@@ -17,25 +16,19 @@ function ClubCircle({
     // 2. 選手数フィルター
     const matchPlayers = club.playerCount >= minPlayers;
 
-    // 3. コスパフィルター
-    const matchCost =
-        costFilter === "all" ||
-        (costFilter === "high" && club.costPerformance > 0) ||
-        (costFilter === "low" && club.costPerformance < 0);
-
-    // 4. 検索マッチ
+    // 3. 検索マッチ
     const matchSearch = useMemo(() => {
         if (!searchText) return true;
         const q = searchText.toLowerCase();
         return club.club.toLowerCase().includes(q) || (club.area && club.area.toLowerCase().includes(q));
     }, [searchText, club]);
 
-    const isVisible = matchArea && matchPlayers && matchCost;
+    const isVisible = matchArea && matchPlayers;
     const isHighlighted = isVisible && matchSearch;
     const isHovered = hoverClub?.club === club.club;
     const isSelected = selectedClub?.club === club.club;
 
-    const baseRadius = club.nodeRadius || (5 + club.playerCount * 1.6);
+    const baseRadius = club.nodeRadius || (4 + club.playerCount * 1.5);
     const radius = isSelected ? baseRadius + 3 : isHovered ? baseRadius + 2 : baseRadius;
 
     return (

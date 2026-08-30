@@ -19,7 +19,6 @@ function CircleGraph({
     toggleArea,
     areaCounts,
     minPlayers,
-    costFilter,
     searchText,
     selectedClub,
     setSelectedClub
@@ -36,7 +35,7 @@ function CircleGraph({
             if (containerRef.current) {
                 const rect = containerRef.current.getBoundingClientRect();
                 const w = Math.max(600, rect.width);
-                const h = Math.max(480, Math.min(window.innerHeight * 0.72, 680));
+                const h = Math.max(480, Math.min(window.innerHeight * 0.76, 720));
                 setDimensions({ width: w, height: h });
             }
         };
@@ -54,13 +53,22 @@ function CircleGraph({
 
     const { width, height } = dimensions;
 
-    // 半円の中心・半径
+    // 半円の中心・半径（外周ラベル用のマージンを確保）
     const centerX = width / 2;
     const centerY = height - 40;
-    const maxRadius = Math.min(width / 2 - 40, height - 70);
+    const maxRadius = Math.min(width / 2 - 55, height - 75);
 
     const minPower = 50;
     const maxPower = 100;
+
+    // コスパ度の最小・最大値
+    const { minCost, maxCost } = useMemo(() => {
+        const costs = data.map((c) => c.costPerformance).filter((c) => c != null);
+        return {
+            minCost: costs.length ? Math.min(...costs) : -3.76,
+            maxCost: costs.length ? Math.max(...costs) : 14.25
+        };
+    }, [data]);
 
     // ノード計算
     const nodes = useMemo(() => {
@@ -100,13 +108,15 @@ function CircleGraph({
                     userSelect: "none"
                 }}
             >
-                {/* 背景ガイド・同心円 */}
+                {/* 背景ガイド・同心円 & コスパ境界線 */}
                 <BackCircle
                     centerX={centerX}
                     centerY={centerY}
                     maxRadius={maxRadius}
                     minPower={minPower}
                     maxPower={maxPower}
+                    minCost={minCost}
+                    maxCost={maxCost}
                 />
 
                 {/* クラブノード */}
@@ -116,7 +126,6 @@ function CircleGraph({
                         club={club}
                         selectedAreas={selectedAreas}
                         minPlayers={minPlayers}
-                        costFilter={costFilter}
                         searchText={searchText}
                         hoverClub={hoverClub}
                         setHoverClub={setHoverClub}
@@ -221,7 +230,7 @@ function CircleGraph({
                                     color: hoverClub.costPerformance > 0 ? "#15803d" : "#b45309"
                                 }}
                             >
-                                {hoverClub.costPerformance > 0 ? "高コスパ" : "低コスパ"}
+                                コスパ度
                             </Typography>
                             <Typography
                                 variant="caption"

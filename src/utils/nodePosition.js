@@ -1,4 +1,3 @@
-
 import { areaConfig, normalizeArea } from "../data/areas";
 
 export function createNodes(
@@ -13,8 +12,8 @@ export function createNodes(
     // ① コスパ度を計算
     // 実際の選手数 - 予測選手数
     //
-    // プラス → 予測より多く輩出 → 高コスパ (左側)
-    // マイナス → 予測より少なく輩出 → 低コスパ (右側)
+    // プラス → 予測より多く輩出 → 高コスパ (厳格に左側: x < centerX, angle > 90°)
+    // マイナス → 予測より少なく輩出 → 低コスパ (厳格に右側: x > centerX, angle < 90°)
     // ========================================
 
     const clubs = data.map((club) => ({
@@ -27,392 +26,218 @@ export function createNodes(
     // ② コスパ度の最大・最小
     // ========================================
 
-    const costValues = clubs.map(
-        (club) => club.costPerformance
-    );
-
+    const costValues = clubs.map((club) => club.costPerformance);
     const minCost = costValues.length ? Math.min(...costValues) : -1;
     const maxCost = costValues.length ? Math.max(...costValues) : 1;
 
     // ========================================
-    // ③ 基本位置を計算
+    // ③ 基本位置を計算（半円内の各領域へ厳密にマッピング）
     // ========================================
 
     const nodes = clubs.map((club) => {
-
-        // ----------------------------------------
-        // ノードの大きさ (4px ~ 24px)
-        // ----------------------------------------
-        const nodeRadius = Math.max(5, Math.min(26, 5 + club.playerCount * 1.6));
+        // ノードの大きさ (4px ~ 22px)
+        const nodeRadius = Math.max(4, Math.min(22, 4 + club.playerCount * 1.5));
 
         // ========================================
-        // コスパ度 → 左右位置 (角度)
-        // 0 = 中央 (90度)
-        // プラス (高コスパ) = 左側 (90度〜168度)
-        // マイナス (低コスパ) = 右側 (90度〜12度)
+        // コスパ度 → 角度
+        // プラス (高コスパ) = 左側 (91度 〜 176度)
+        // マイナス (低コスパ) = 右側 (4度 〜 89度)
+        // 0 = 完全に中央 (90度)
         // ========================================
 
-        let angle;
+        let baseAngle;
 
         if (club.costPerformance > 0) {
-            // プラス → 高コスパ → 左側
             const ratio = maxCost > 0 ? club.costPerformance / maxCost : 0;
-            angle = 90 + Math.min(1, Math.max(0, ratio)) * 76;
+            baseAngle = 91 + Math.min(1, Math.max(0, ratio)) * 82;
         } else if (club.costPerformance < 0) {
-            // マイナス → 低コスパ → 右側
             const ratio = minCost < 0 ? Math.abs(club.costPerformance) / Math.abs(minCost) : 0;
-            angle = 90 - Math.min(1, Math.max(0, ratio)) * 76;
+            baseAngle = 89 - Math.min(1, Math.max(0, ratio)) * 82;
         } else {
-            angle = 90;
+            baseAngle = 90;
         }
-
-        const originalAngle = angle;
 
         // ========================================
         // クラブパワー → 半径 (中心からの距離)
-        // 低パワー(50) → 中心近く
-        // 高パワー(100) → 外周近く
         // ========================================
 
-        const powerRatio =
-            Math.max(
-                0.05,
-                Math.min(
-                    1,
-                    (club.power - minPower) / (maxPower - minPower)
-                )
-            );
+        const powerRatio = Math.max(
+            0.05,
+            Math.min(1, (club.power - minPower) / (maxPower - minPower))
+        );
 
-        const safeRadius = Math.max(20, maxRadius - nodeRadius - 15);
+        const safeRadius = Math.max(20, maxRadius - nodeRadius - 10);
         const radius = powerRatio * safeRadius;
 
-        // XY座標
-        const rad = (angle * Math.PI) / 180;
-        const x = centerX + radius * Math.cos(rad);
-        const y = centerY - radius * Math.sin(rad);
+        // 初期XY座標
+        const rad = (baseAngle * Math.PI) / 180;
+        let x = centerX + radius * Math.cos(rad);
+        let y = centerY - radius * Math.sin(rad);
+
+        // 境界線の厳密な遵守（初期配置）
+        if (club.costPerformance > 0 && x > centerX - 1) {
+            x = centerX - 1;
+        } else if (club.costPerformance < 0 && x < centerX + 1) {
+            x = centerX + 1;
+        }
 
         const normalizedArea = normalizeArea(club.area);
         const areaInfo = areaConfig[normalizedArea] || {
             id: "other",
             name: normalizedArea,
-            color: "#a855f7",
-            glowColor: "rgba(168, 85, 247, 0.4)",
-            bgLight: "rgba(168, 85, 247, 0.15)",
-            border: "#c084fc"
+            color: "#2563eb",
+            bgLight: "#eff6ff",
+            border: "#bfdbfe"
         };
 
         return {
             ...club,
             normalizedArea,
             areaColor: areaInfo.color,
-            areaGlow: areaInfo.glowColor,
             areaClass: `area-${areaInfo.id}`,
             nodeRadius,
             radius,
-            originalAngle,
-            angle,
+            baseAngle,
+            angle: baseAngle,
             x,
             y
         };
     });
 
-
     // ========================================
-    // ⑤ ノードの重なりを解消
-    //
-    // 重要：
-    // ・クラブパワー → 半径は変更しない
-    // ・コスパ度 → 左右位置を基本維持
-    // ・角度は originalAngle ±10°以内
+    // ④ ノードの重なりを解消（境界線を絶対にまたがない）
     // ========================================
 
     const MAX_ANGLE_MOVE = 10;
 
-    for (let loop = 0; loop < 80; loop++) {
-
+    for (let loop = 0; loop < 60; loop++) {
         let moved = false;
 
         for (let i = 0; i < nodes.length; i++) {
-
-            for (
-                let j = i + 1;
-                j < nodes.length;
-                j++
-            ) {
-
+            for (let j = i + 1; j < nodes.length; j++) {
                 const a = nodes[i];
                 const b = nodes[j];
 
-                // ------------------------------------
-                // 現在の距離
-                // ------------------------------------
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                const distance = Math.sqrt(dx * dx + dy * dy) || 0.01;
+                const minDistance = a.nodeRadius + b.nodeRadius + 2;
 
-                const dx =
-                    b.x - a.x;
-
-                const dy =
-                    b.y - a.y;
-
-                let distance =
-                    Math.sqrt(
-                        dx * dx +
-                        dy * dy
-                    );
-
-                // ------------------------------------
-                // 必要な最小距離
-                // ------------------------------------
-
-                const minDistance =
-                    a.nodeRadius +
-                    b.nodeRadius +
-                    5;
-
-                // 重なっていなければ何もしない
                 if (distance >= minDistance) {
                     continue;
                 }
 
                 moved = true;
+                const overlap = minDistance - distance;
 
-                // ------------------------------------
-                // 完全に同じ位置の場合
-                // ------------------------------------
+                // 角度調整
+                let newAngleA = a.angle + 0.8;
+                let newAngleB = b.angle - 0.8;
 
-                if (distance === 0) {
-                    distance = 0.01;
+                // 各ノードの所属領域（プラス側 / マイナス側）を厳格に制限
+                if (a.costPerformance > 0) {
+                    newAngleA = Math.max(
+                        91,
+                        Math.min(
+                            176,
+                            Math.max(a.baseAngle - MAX_ANGLE_MOVE, Math.min(a.baseAngle + MAX_ANGLE_MOVE, newAngleA))
+                        )
+                    );
+                } else if (a.costPerformance < 0) {
+                    newAngleA = Math.max(
+                        4,
+                        Math.min(
+                            89,
+                            Math.max(a.baseAngle - MAX_ANGLE_MOVE, Math.min(a.baseAngle + MAX_ANGLE_MOVE, newAngleA))
+                        )
+                    );
                 }
 
-                // ------------------------------------
-                // 重なっている量
-                // ------------------------------------
-
-                const overlap =
-                    minDistance -
-                    distance;
-
-                // ====================================
-                // まず角度方向に少しだけ移動する
-                //
-                // ただし originalAngle ±10°まで
-                // ====================================
-
-                let angleA =
-                    a.angle;
-
-                let angleB =
-                    b.angle;
-
-                // Aを少し左へ
-                let newAngleA =
-                    angleA + 1.0;
-
-                // Bを少し右へ
-                let newAngleB =
-                    angleB - 1.0;
-
-                // ------------------------------------
-                // 角度の移動範囲を制限
-                // ------------------------------------
-
-                newAngleA =
-                    Math.max(
-                        a.originalAngle -
-                        MAX_ANGLE_MOVE,
-
+                if (b.costPerformance > 0) {
+                    newAngleB = Math.max(
+                        91,
                         Math.min(
-                            a.originalAngle +
-                            MAX_ANGLE_MOVE,
-
-                            newAngleA
+                            176,
+                            Math.max(b.baseAngle - MAX_ANGLE_MOVE, Math.min(b.baseAngle + MAX_ANGLE_MOVE, newAngleB))
                         )
                     );
-
-                newAngleB =
-                    Math.max(
-                        b.originalAngle -
-                        MAX_ANGLE_MOVE,
-
+                } else if (b.costPerformance < 0) {
+                    newAngleB = Math.max(
+                        4,
                         Math.min(
-                            b.originalAngle +
-                            MAX_ANGLE_MOVE,
-
-                            newAngleB
+                            89,
+                            Math.max(b.baseAngle - MAX_ANGLE_MOVE, Math.min(b.baseAngle + MAX_ANGLE_MOVE, newAngleB))
                         )
                     );
+                }
 
-                // ====================================
-                // 新しい座標を計算
-                // ====================================
+                const radA = (newAngleA * Math.PI) / 180;
+                const radB = (newAngleB * Math.PI) / 180;
 
-                const radA =
-                    newAngleA *
-                    Math.PI / 180;
+                const nAX = centerX + a.radius * Math.cos(radA);
+                const nAY = centerY - a.radius * Math.sin(radA);
+                const nBX = centerX + b.radius * Math.cos(radB);
+                const nBY = centerY - b.radius * Math.sin(radB);
 
-                const radB =
-                    newAngleB *
-                    Math.PI / 180;
+                const newDist = Math.sqrt((nBX - nAX) ** 2 + (nBY - nAY) ** 2);
 
-                const newAX =
-                    centerX +
-                    a.radius *
-                    Math.cos(radA);
-
-                const newAY =
-                    centerY -
-                    a.radius *
-                    Math.sin(radA);
-
-                const newBX =
-                    centerX +
-                    b.radius *
-                    Math.cos(radB);
-
-                const newBY =
-                    centerY -
-                    b.radius *
-                    Math.sin(radB);
-
-                // ====================================
-                // 新しい位置の方が近づく場合は
-                // 角度変更ではなく少し押し出す
-                // ====================================
-
-                const newDx =
-                    newBX - newAX;
-
-                const newDy =
-                    newBY - newAY;
-
-                const newDistance =
-                    Math.sqrt(
-                        newDx * newDx +
-                        newDy * newDy
-                    );
-
-                // ------------------------------------
-                // 新しい角度で改善する場合
-                // ------------------------------------
-
-                if (
-                    newDistance > distance
-                ) {
-
-                    a.angle =
-                        newAngleA;
-
-                    b.angle =
-                        newAngleB;
-
-                    a.x =
-                        newAX;
-
-                    a.y =
-                        newAY;
-
-                    b.x =
-                        newBX;
-
-                    b.y =
-                        newBY;
-
+                if (newDist > distance) {
+                    a.angle = newAngleA;
+                    b.angle = newAngleB;
+                    a.x = nAX;
+                    a.y = nAY;
+                    b.x = nBX;
+                    b.y = nBY;
                 } else {
+                    const pushAmount = overlap * 0.18;
+                    const pushX = (dx / distance) * pushAmount;
+                    const pushY = (dy / distance) * pushAmount;
 
-                    // ==================================
-                    // 角度をこれ以上動かせない場合
-                    // 少しだけ位置を押し出す
-                    // ==================================
-
-                    const pushX =
-                        dx / distance;
-
-                    const pushY =
-                        dy / distance;
-
-                    const pushAmount =
-                        overlap * 0.15;
-
-                    a.x -=
-                        pushX *
-                        pushAmount;
-
-                    a.y -=
-                        pushY *
-                        pushAmount;
-
-                    b.x +=
-                        pushX *
-                        pushAmount;
-
-                    b.y +=
-                        pushY *
-                        pushAmount;
+                    a.x -= pushX;
+                    a.y -= pushY;
+                    b.x += pushX;
+                    b.y += pushY;
                 }
+
+                // 境界線（centerX）の厳格な維持
+                if (a.costPerformance > 0 && a.x > centerX - 1) a.x = centerX - 1;
+                if (a.costPerformance < 0 && a.x < centerX + 1) a.x = centerX + 1;
+                if (b.costPerformance > 0 && b.x > centerX - 1) b.x = centerX - 1;
+                if (b.costPerformance < 0 && b.x < centerX + 1) b.x = centerX + 1;
             }
         }
 
-        if (!moved) {
-            break;
-        }
+        if (!moved) break;
     }
 
     // ========================================
-    // ⑥ 半円の外側にはみ出さないようにする
+    // ⑤ 外周・底辺・境界線のはみ出し防止クランプ
     // ========================================
 
     nodes.forEach((node) => {
-
-        const dx =
-            node.x - centerX;
-
-        const dy =
-            node.y - centerY;
-
-        const distance =
-            Math.sqrt(
-                dx * dx +
-                dy * dy
-            );
-
-        const maxSafe =
-            maxRadius -
-            node.nodeRadius -
-            10;
-
-        // ----------------------------------------
-        // 外側にはみ出した場合
-        // ----------------------------------------
+        const dx = node.x - centerX;
+        const dy = node.y - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const maxSafe = maxRadius - node.nodeRadius - 4;
 
         if (distance > maxSafe) {
-
-            const ratio =
-                maxSafe / distance;
-
-            node.x =
-                centerX +
-                dx * ratio;
-
-            node.y =
-                centerY +
-                dy * ratio;
+            const ratio = maxSafe / distance;
+            node.x = centerX + dx * ratio;
+            node.y = centerY + dy * ratio;
         }
 
-        // ----------------------------------------
-        // 半円より下に行かせない
-        // ----------------------------------------
+        // 底辺（y = centerY）より下に行かない
+        if (node.y > centerY - node.nodeRadius - 2) {
+            node.y = centerY - node.nodeRadius - 2;
+        }
 
-        if (
-            node.y >
-            centerY -
-            node.nodeRadius
-        ) {
-
-            node.y =
-                centerY -
-                node.nodeRadius;
+        // 境界線（centerX）の最終保証
+        if (node.costPerformance > 0 && node.x > centerX - 1) {
+            node.x = centerX - 1;
+        } else if (node.costPerformance < 0 && node.x < centerX + 1) {
+            node.x = centerX + 1;
         }
     });
 
     return nodes;
 }
-
