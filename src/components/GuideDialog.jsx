@@ -44,14 +44,14 @@ function GuideDialog({ open, onClose, regressionModel }) {
                         半円グラフの見方
                     </Typography>
                     <Typography variant="caption" sx={{ color: "#64748b" }}>
-                        チームパワーと選手数による分析の見方
+                        クラブパワーと選手数による分析の見方
                     </Typography>
                 </div>
             </DialogTitle>
 
             <DialogContent dividers sx={{ borderColor: "#f1f5f9", py: 2.5 }}>
                 <Stack spacing={2.5}>
-                    {/* コスパ計算の解説 */}
+                    {/* 輩出力計算の解説 */}
                     <Paper
                         sx={{
                             p: 2,
@@ -61,18 +61,18 @@ function GuideDialog({ open, onClose, regressionModel }) {
                         }}
                     >
                         <Typography variant="subtitle2" sx={{ color: "#0f172a", fontWeight: 700, mb: 0.8 }}>
-                            コスパ度とは？
+                            輩出力とは？
                         </Typography>
                         <Typography variant="body2" sx={{ color: "#475569", lineHeight: 1.6, fontSize: "0.85rem" }}>
-                            全クラブの「チームパワー」と「選手数」から回帰直線を計算し、
-                            パワー相応に予測される選手数と実際の選手数を比較しています。
-                            予測より多ければ<strong>高コスパ（左側）</strong>、
-                            少なければ<strong>低コスパ（右側）</strong>となります。
+                            全クラブの「クラブパワー」と「選手数」から回帰直線を計算し、
+                            クラブパワー相応に予測される選手数と実際の選手数を比較しています。
+                            予測より多ければ<strong>高輩出力（左側）</strong>、
+                            少なければ<strong>低輩出力（右側）</strong>となります。
                         </Typography>
                         {regressionModel && (
                             <Box sx={{ mt: 1, p: 1, bgcolor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 1 }}>
                                 <Typography variant="caption" sx={{ fontFamily: "monospace", color: "#2563eb", fontWeight: 600 }}>
-                                    予測選手数 = {regressionModel.slope.toFixed(3)} × パワー + ({regressionModel.intercept.toFixed(2)})
+                                    予測選手数 = {regressionModel.slope.toFixed(3)} × クラブパワー + ({regressionModel.intercept.toFixed(2)})
                                 </Typography>
                             </Box>
                         )}
@@ -87,7 +87,7 @@ function GuideDialog({ open, onClose, regressionModel }) {
                                     1. 中心からの距離（半径）
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: "#64748b", lineHeight: 1.5, display: "block" }}>
-                                    <strong>チームパワー（50〜100）</strong>を表します。外側ほどパワーの高い強豪クラブです。
+                                    <strong>クラブパワー（50〜100）</strong>を表します。外側ほどクラブパワーの高い強豪クラブです。
                                 </Typography>
                             </Paper>
                         </Grid>
@@ -99,7 +99,7 @@ function GuideDialog({ open, onClose, regressionModel }) {
                                     2. 左右の位置（角度）
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: "#64748b", lineHeight: 1.5, display: "block" }}>
-                                    <strong>コスパ度</strong>を表します。左側ほど予測より多くの選手を輩出しています。
+                                    <strong>輩出力</strong>を表します。左側ほど予測より多くの選手を輩出しています。
                                 </Typography>
                             </Paper>
                         </Grid>

@@ -6,14 +6,11 @@ export function createNodes(
     centerY,
     maxRadius,
     minPower,
-    maxPower
+    maxPower,
+    costRange = null  // { min, max } — 範囲選択モード時に使用。min→0°, max→180° の線形マッピング
 ) {
     // ========================================
-    // ① コスパ度を計算
-    // 実際の選手数 - 予測選手数
-    //
-    // プラス → 予測より多く輩出 → 高コスパ (厳格に左側: x < centerX, angle > 90°)
-    // マイナス → 予測より少なく輩出 → 低コスパ (厳格に右側: x > centerX, angle < 90°)
+    // ① 輩出力を計算
     // ========================================
 
     const clubs = data.map((club) => ({
@@ -23,7 +20,7 @@ export function createNodes(
     }));
 
     // ========================================
-    // ② コスパ度の最大・最小
+    // ② 輩出力の最大・最小（通常モード用）
     // ========================================
 
     const costValues = clubs.map((club) => club.costPerformance);
@@ -31,34 +28,44 @@ export function createNodes(
     const maxCost = costValues.length ? Math.max(...costValues) : 1;
 
     // ========================================
-    // ③ 基本位置を計算（半円内の各領域へ厳密にマッピング）
+    // ③ 基本位置を計算
     // ========================================
 
     const nodes = clubs.map((club) => {
         // ノードの大きさ (4px ~ 22px)
         const nodeRadius = Math.max(4, Math.min(22, 4 + club.playerCount * 1.5));
 
-        // ========================================
-        // コスパ度 → 角度
-        // プラス (高コスパ) = 左側 (91度 〜 176度)
-        // マイナス (低コスパ) = 右側 (4度 〜 89度)
-        // 0 = 完全に中央 (90度)
-        // ========================================
-
         let baseAngle;
 
-        if (club.costPerformance > 0) {
-            const ratio = maxCost > 0 ? club.costPerformance / maxCost : 0;
-            baseAngle = 91 + Math.min(1, Math.max(0, ratio)) * 82;
-        } else if (club.costPerformance < 0) {
-            const ratio = minCost < 0 ? Math.abs(club.costPerformance) / Math.abs(minCost) : 0;
-            baseAngle = 89 - Math.min(1, Math.max(0, ratio)) * 82;
+        if (costRange) {
+            // ========================================
+            // 範囲選択モード: costRange.min → 0°, costRange.max → 180° に線形マッピング
+            // 右端(0°) = 低輩出力, 左端(180°) = 高輩出力
+            // ========================================
+            const span = costRange.max - costRange.min;
+            if (span <= 0) {
+                baseAngle = 90;
+            } else {
+                const ratio = (club.costPerformance - costRange.min) / span;
+                baseAngle = Math.max(0, Math.min(1, ratio)) * 180;
+            }
         } else {
-            baseAngle = 90;
+            // ========================================
+            // 通常モード: プラス→左側(91-173°), マイナス→右側(4-89°)
+            // ========================================
+            if (club.costPerformance > 0) {
+                const ratio = maxCost > 0 ? club.costPerformance / maxCost : 0;
+                baseAngle = 91 + Math.min(1, Math.max(0, ratio)) * 82;
+            } else if (club.costPerformance < 0) {
+                const ratio = minCost < 0 ? Math.abs(club.costPerformance) / Math.abs(minCost) : 0;
+                baseAngle = 89 - Math.min(1, Math.max(0, ratio)) * 82;
+            } else {
+                baseAngle = 90;
+            }
         }
 
         // ========================================
-        // クラブパワー → 半径 (中心からの距離)
+        // クラブパワー → 半径
         // ========================================
 
         const powerRatio = Math.max(
@@ -74,11 +81,10 @@ export function createNodes(
         let x = centerX + radius * Math.cos(rad);
         let y = centerY - radius * Math.sin(rad);
 
-        // 境界線の厳密な遵守（初期配置）
-        if (club.costPerformance > 0 && x > centerX - 1) {
-            x = centerX - 1;
-        } else if (club.costPerformance < 0 && x < centerX + 1) {
-            x = centerX + 1;
+        // 通常モード: 境界線（左/右）の厳格な維持
+        if (!costRange) {
+            if (club.costPerformance > 0 && x > centerX - 1) x = centerX - 1;
+            else if (club.costPerformance < 0 && x < centerX + 1) x = centerX + 1;
         }
 
         const normalizedArea = normalizeArea(club.area);
@@ -105,7 +111,7 @@ export function createNodes(
     });
 
     // ========================================
-    // ④ ノードの重なりを解消（境界線を絶対にまたがない）
+    // ④ ノードの重なりを解消
     // ========================================
 
     const MAX_ANGLE_MOVE = 10;
@@ -130,45 +136,62 @@ export function createNodes(
                 moved = true;
                 const overlap = minDistance - distance;
 
-                // 角度調整
                 let newAngleA = a.angle + 0.8;
                 let newAngleB = b.angle - 0.8;
 
-                // 各ノードの所属領域（プラス側 / マイナス側）を厳格に制限
-                if (a.costPerformance > 0) {
+                if (costRange) {
+                    // 範囲モード: 0°~180° 全体で自由移動
                     newAngleA = Math.max(
-                        91,
+                        0,
                         Math.min(
-                            176,
+                            180,
                             Math.max(a.baseAngle - MAX_ANGLE_MOVE, Math.min(a.baseAngle + MAX_ANGLE_MOVE, newAngleA))
                         )
                     );
-                } else if (a.costPerformance < 0) {
-                    newAngleA = Math.max(
-                        4,
+                    newAngleB = Math.max(
+                        0,
                         Math.min(
-                            89,
-                            Math.max(a.baseAngle - MAX_ANGLE_MOVE, Math.min(a.baseAngle + MAX_ANGLE_MOVE, newAngleA))
+                            180,
+                            Math.max(b.baseAngle - MAX_ANGLE_MOVE, Math.min(b.baseAngle + MAX_ANGLE_MOVE, newAngleB))
                         )
                     );
-                }
+                } else {
+                    // 通常モード: 各ノードの所属領域（プラス側 / マイナス側）を厳格に制限
+                    if (a.costPerformance > 0) {
+                        newAngleA = Math.max(
+                            91,
+                            Math.min(
+                                176,
+                                Math.max(a.baseAngle - MAX_ANGLE_MOVE, Math.min(a.baseAngle + MAX_ANGLE_MOVE, newAngleA))
+                            )
+                        );
+                    } else if (a.costPerformance < 0) {
+                        newAngleA = Math.max(
+                            4,
+                            Math.min(
+                                89,
+                                Math.max(a.baseAngle - MAX_ANGLE_MOVE, Math.min(a.baseAngle + MAX_ANGLE_MOVE, newAngleA))
+                            )
+                        );
+                    }
 
-                if (b.costPerformance > 0) {
-                    newAngleB = Math.max(
-                        91,
-                        Math.min(
-                            176,
-                            Math.max(b.baseAngle - MAX_ANGLE_MOVE, Math.min(b.baseAngle + MAX_ANGLE_MOVE, newAngleB))
-                        )
-                    );
-                } else if (b.costPerformance < 0) {
-                    newAngleB = Math.max(
-                        4,
-                        Math.min(
-                            89,
-                            Math.max(b.baseAngle - MAX_ANGLE_MOVE, Math.min(b.baseAngle + MAX_ANGLE_MOVE, newAngleB))
-                        )
-                    );
+                    if (b.costPerformance > 0) {
+                        newAngleB = Math.max(
+                            91,
+                            Math.min(
+                                176,
+                                Math.max(b.baseAngle - MAX_ANGLE_MOVE, Math.min(b.baseAngle + MAX_ANGLE_MOVE, newAngleB))
+                            )
+                        );
+                    } else if (b.costPerformance < 0) {
+                        newAngleB = Math.max(
+                            4,
+                            Math.min(
+                                89,
+                                Math.max(b.baseAngle - MAX_ANGLE_MOVE, Math.min(b.baseAngle + MAX_ANGLE_MOVE, newAngleB))
+                            )
+                        );
+                    }
                 }
 
                 const radA = (newAngleA * Math.PI) / 180;
@@ -199,11 +222,13 @@ export function createNodes(
                     b.y += pushY;
                 }
 
-                // 境界線（centerX）の厳格な維持
-                if (a.costPerformance > 0 && a.x > centerX - 1) a.x = centerX - 1;
-                if (a.costPerformance < 0 && a.x < centerX + 1) a.x = centerX + 1;
-                if (b.costPerformance > 0 && b.x > centerX - 1) b.x = centerX - 1;
-                if (b.costPerformance < 0 && b.x < centerX + 1) b.x = centerX + 1;
+                // 通常モード: 境界線（centerX）の厳格な維持
+                if (!costRange) {
+                    if (a.costPerformance > 0 && a.x > centerX - 1) a.x = centerX - 1;
+                    if (a.costPerformance < 0 && a.x < centerX + 1) a.x = centerX + 1;
+                    if (b.costPerformance > 0 && b.x > centerX - 1) b.x = centerX - 1;
+                    if (b.costPerformance < 0 && b.x < centerX + 1) b.x = centerX + 1;
+                }
             }
         }
 
@@ -231,11 +256,13 @@ export function createNodes(
             node.y = centerY - node.nodeRadius - 2;
         }
 
-        // 境界線（centerX）の最終保証
-        if (node.costPerformance > 0 && node.x > centerX - 1) {
-            node.x = centerX - 1;
-        } else if (node.costPerformance < 0 && node.x < centerX + 1) {
-            node.x = centerX + 1;
+        // 通常モード: 境界線（centerX）の最終保証
+        if (!costRange) {
+            if (node.costPerformance > 0 && node.x > centerX - 1) {
+                node.x = centerX - 1;
+            } else if (node.costPerformance < 0 && node.x < centerX + 1) {
+                node.x = centerX + 1;
+            }
         }
     });
 

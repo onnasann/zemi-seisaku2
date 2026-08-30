@@ -10,7 +10,6 @@ import Chip from "@mui/material/Chip";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
-import { areaConfig } from "../data/areas";
 import {
     SearchIcon,
     CloseIcon,
@@ -20,23 +19,16 @@ import {
 function FilterControls({
     searchText,
     setSearchText,
-    selectedAreas,
-    toggleArea,
-    toggleAllAreas,
+    searchOptions,
     minPlayers,
     setMinPlayers,
     matchedCount,
     totalCount,
     totalPlayers,
     avgPower,
-    areaCounts,
     isFiltered,
     onResetFilters
 }) {
-    const allAreasSelected = Object.keys(areaConfig).every((a) =>
-        selectedAreas.includes(a)
-    );
-
     return (
         <Card
             sx={{
@@ -75,7 +67,7 @@ function FilterControls({
                                 sx={{ bgcolor: "#f1f5f9", color: "#475569", fontWeight: 600, height: 26 }}
                             />
                             <Chip
-                                label={`平均パワー: ${avgPower.toFixed(1)}`}
+                                label={`平均クラブパワー: ${avgPower.toFixed(1)}`}
                                 size="small"
                                 sx={{ bgcolor: "#eff6ff", color: "#2563eb", fontWeight: 600, height: 26 }}
                             />
@@ -114,7 +106,8 @@ function FilterControls({
                             fullWidth
                             placeholder="クラブ名を検索..."
                             value={searchText}
-                            onChange={(e) => setSearchText(e.target.value)}
+                            onChange={(event) => setSearchText(event.target.value)}
+                            inputProps={{ list: "club-search-options" }}
                             sx={{
                                 "& .MuiOutlinedInput-root": {
                                     height: 34,
@@ -140,6 +133,11 @@ function FilterControls({
                                 ) : null
                             }}
                         />
+                        <datalist id="club-search-options">
+                            {searchOptions.map((option) => (
+                                <option key={option} value={option} />
+                            ))}
+                        </datalist>
                     </Box>
 
                     {/* 該当件数 */}
@@ -149,7 +147,7 @@ function FilterControls({
                 </Stack>
             </Box>
 
-            {/* 下部: フィルター（エリア & 選手数） */}
+            {/* 下部: 選手数フィルター */}
             <CardContent sx={{ p: { xs: 2, md: 2.5 }, pt: { xs: 1.5, md: 1.5 } }}>
                 <Box
                     sx={{
@@ -160,63 +158,6 @@ function FilterControls({
                         gap: 2
                     }}
                 >
-                    {/* エリアフィルター */}
-                    <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.8, flex: 1 }}>
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                color: "#64748b",
-                                fontWeight: 700,
-                                minWidth: 46
-                            }}
-                        >
-                            エリア:
-                        </Typography>
-
-                        <Chip
-                            label="すべて"
-                            size="small"
-                            onClick={toggleAllAreas}
-                            sx={{
-                                cursor: "pointer",
-                                fontWeight: 700,
-                                height: 24,
-                                fontSize: "0.75rem",
-                                bgcolor: allAreasSelected ? "#2563eb" : "#f1f5f9",
-                                color: allAreasSelected ? "#ffffff" : "#64748b",
-                                "&:hover": {
-                                    bgcolor: allAreasSelected ? "#1d4ed8" : "#e2e8f0"
-                                }
-                            }}
-                        />
-
-                        {Object.entries(areaConfig).map(([areaName, config]) => {
-                            const isSelected = selectedAreas.includes(areaName);
-                            const count = areaCounts[areaName] || 0;
-                            return (
-                                <Chip
-                                    key={areaName}
-                                    label={`${config.name} (${count})`}
-                                    size="small"
-                                    onClick={() => toggleArea(areaName)}
-                                    sx={{
-                                        cursor: "pointer",
-                                        fontWeight: 600,
-                                        height: 24,
-                                        fontSize: "0.75rem",
-                                        bgcolor: isSelected ? config.bgLight : "#f8fafc",
-                                        color: isSelected ? config.textColor : "#94a3b8",
-                                        border: `1px solid ${isSelected ? config.border : "#e2e8f0"}`,
-                                        "&:hover": {
-                                            bgcolor: config.bgLight,
-                                            color: config.textColor
-                                        }
-                                    }}
-                                />
-                            );
-                        })}
-                    </Box>
-
                     {/* 選手数スライダー */}
                     <Box sx={{ width: { xs: "100%", md: 360 } }}>
                         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.2, alignItems: "center" }}>

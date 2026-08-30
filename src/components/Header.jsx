@@ -72,7 +72,7 @@ function Header({
                                 fontWeight: 500
                             }}
                         >
-                            チームパワーと選手数によるコスパ分析
+                            クラブパワーと選手数による輩出力分析
                         </Typography>
                     </Box>
                 </Box>
@@ -100,7 +100,7 @@ function Header({
                                 }}
                             />
                             <Chip
-                                label={`平均パワー: ${avgPower.toFixed(1)}`}
+                                label={`平均クラブパワー: ${avgPower.toFixed(1)}`}
                                 size="small"
                                 sx={{
                                     bgcolor: "#eff6ff",

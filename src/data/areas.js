@@ -146,3 +146,55 @@ export const countryFlags = {
     "チリ": "🇨🇱",
     "ペルー": "🇵🇪"
 };
+
+export function getCountryFlag(country) {
+    const value = country?.trim() || "";
+    if (countryFlags[value]) return countryFlags[value];
+
+    const code = value.toUpperCase();
+    if (/^[A-Z]{2}$/.test(code)) {
+        return [...code]
+            .map((letter) => String.fromCodePoint(127397 + letter.charCodeAt(0)))
+            .join("");
+    }
+
+    return "🌐";
+}
+
+export function getCountryFlagCode(country) {
+    const value = country?.trim() || "";
+    const isoCode = value.toUpperCase();
+    if (/^[A-Z]{2}$/.test(isoCode)) return isoCode.toLowerCase();
+
+    const subdivisionCodes = {
+        "イングランド": "gb-eng",
+        "スコットランド": "gb-sct",
+        "ウェールズ": "gb-wls"
+    };
+    if (subdivisionCodes[value]) return subdivisionCodes[value];
+
+    const flag = countryFlags[value];
+    if (!flag) return null;
+
+    const regionalIndicators = [...flag]
+        .map((character) => character.codePointAt(0))
+        .filter((codePoint) => codePoint >= 127462 && codePoint <= 127487);
+
+    if (regionalIndicators.length !== 2) return null;
+    return regionalIndicators
+        .map((codePoint) => String.fromCharCode(codePoint - 127397))
+        .join("")
+        .toLowerCase();
+}
+
+export function getCountryDisplayName(country) {
+    const value = country?.trim() || "";
+    const code = value.toUpperCase();
+    if (!/^[A-Z]{2}$/.test(code)) return value;
+
+    try {
+        return new Intl.DisplayNames(["ja"], { type: "region" }).of(code) || value;
+    } catch {
+        return value;
+    }
+}

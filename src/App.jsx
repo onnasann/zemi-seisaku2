@@ -11,7 +11,7 @@ import { lightTheme } from "./theme";
 import FilterControls from "./components/FilterControls";
 import CircleGraph from "./components/CircleGraph";
 import ClubDetail from "./components/ClubDetail";
-import { areaConfig, normalizeArea } from "./data/areas";
+import { normalizeArea } from "./data/areas";
 
 import "./CircleGraph.css";
 
@@ -27,7 +27,6 @@ function App() {
     // フィルター状態
     // ========================================
     const [searchText, setSearchText] = useState("");
-    const [selectedAreas, setSelectedAreas] = useState(Object.keys(areaConfig));
     const [minPlayers, setMinPlayers] = useState(1);
 
     // ========================================
@@ -82,7 +81,7 @@ function App() {
 
                         const clubList = Object.values(clubs);
 
-                        // 単回帰分析: パワー (x) → 選手数 (y)
+                        // 単回帰分析: クラブパワー (x) → 選手数 (y)
                         const n = clubList.length;
                         if (n > 0) {
                             const meanPower =
@@ -132,69 +131,31 @@ function App() {
             });
     }, []);
 
-    // エリアクリック時の切り替え（クリックしたエリアを表示）
-    const toggleArea = (area) => {
-        const allAreaKeys = Object.keys(areaConfig);
-
-        // 全エリアが表示されている場合、クリックしたエリア「のみ」を表示する
-        if (selectedAreas.length === allAreaKeys.length) {
-            setSelectedAreas([area]);
-            return;
-        }
-
-        // すでに選択されている場合
-        if (selectedAreas.includes(area)) {
-            const next = selectedAreas.filter((a) => a !== area);
-            // 全て解除されたら全表示に戻す
-            setSelectedAreas(next.length === 0 ? allAreaKeys : next);
-        } else {
-            // 未選択のエリアをクリックした場合は追加表示
-            setSelectedAreas([...selectedAreas, area]);
-        }
-    };
-
-    const toggleAllAreas = () => {
-        setSelectedAreas(Object.keys(areaConfig));
-    };
-
     const handleResetFilters = () => {
         setSearchText("");
-        setSelectedAreas(Object.keys(areaConfig));
         setMinPlayers(1);
     };
 
     const isFiltered =
-        Boolean(searchText) ||
-        selectedAreas.length < Object.keys(areaConfig).length ||
-        minPlayers > 1;
+        Boolean(searchText) || minPlayers > 1;
 
-    // エリア別クラブ件数
-    const areaCounts = useMemo(() => {
-        const counts = {};
-        Object.keys(areaConfig).forEach((a) => (counts[a] = 0));
-        data.forEach((club) => {
-            const area = club.normalizedArea || club.area;
-            if (counts[area] != null) {
-                counts[area]++;
-            }
-        });
-        return counts;
-    }, [data]);
+    const searchOptions = useMemo(
+        () => data.map((club) => club.club).sort((a, b) => a.localeCompare(b, "ja")),
+        [data]
+    );
 
     // フィルター適用クラブ一覧
     const filteredData = useMemo(() => {
         return data.filter((club) => {
-            if (!selectedAreas.includes(club.normalizedArea)) return false;
             if (club.playerCount < minPlayers) return false;
             if (searchText) {
                 const q = searchText.toLowerCase();
                 const matchClub = club.club.toLowerCase().includes(q);
-                const matchArea = (club.area || "").toLowerCase().includes(q);
-                if (!matchClub && !matchArea) return false;
+                if (!matchClub) return false;
             }
             return true;
         });
-    }, [data, selectedAreas, minPlayers, searchText]);
+    }, [data, minPlayers, searchText]);
 
     const totalClubs = data.length;
     const totalPlayers = players.length;
@@ -216,20 +177,34 @@ function App() {
             <CssBaseline />
 
             <Container maxWidth="xl" sx={{ py: 2, px: { xs: 1.5, md: 3 } }}>
+                <Box sx={{ mb: 2 }}>
+                    <Typography
+                        component="h1"
+                        variant="h4"
+                        sx={{
+                            color: "#0f172a",
+                            fontWeight: 800,
+                            letterSpacing: "-0.02em"
+                        }}
+                    >
+                        最強クラブ分析
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#64748b", mt: 0.5 }}>
+                        クラブパワーと選手数による輩出力分析
+                    </Typography>
+                </Box>
+
                 {/* フィルターバー */}
                 <FilterControls
                     searchText={searchText}
                     setSearchText={setSearchText}
-                    selectedAreas={selectedAreas}
-                    toggleArea={toggleArea}
-                    toggleAllAreas={toggleAllAreas}
+                    searchOptions={searchOptions}
                     minPlayers={minPlayers}
                     setMinPlayers={setMinPlayers}
                     matchedCount={filteredData.length}
                     totalCount={totalClubs}
                     totalPlayers={totalPlayers}
                     avgPower={avgPower}
-                    areaCounts={areaCounts}
                     isFiltered={isFiltered}
                     onResetFilters={handleResetFilters}
                 />
@@ -255,9 +230,6 @@ function App() {
                     <CircleGraph
                         data={data}
                         players={players}
-                        selectedAreas={selectedAreas}
-                        toggleArea={toggleArea}
-                        areaCounts={areaCounts}
                         minPlayers={minPlayers}
                         searchText={searchText}
                         selectedClub={selectedClub}

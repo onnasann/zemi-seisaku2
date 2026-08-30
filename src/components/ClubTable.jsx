@@ -106,7 +106,7 @@ function ClubTable({ data, onSelectClub }) {
                                     direction={orderBy === "power" ? order : "asc"}
                                     onClick={() => handleRequestSort("power")}
                                 >
-                                    パワー
+                                    クラブパワー
                                 </TableSortLabel>
                             </TableCell>
 
@@ -136,7 +136,7 @@ function ClubTable({ data, onSelectClub }) {
                                     direction={orderBy === "costPerformance" ? order : "asc"}
                                     onClick={() => handleRequestSort("costPerformance")}
                                 >
-                                    コスパ度
+                                    輩出力
                                 </TableSortLabel>
                             </TableCell>
 
@@ -218,7 +218,7 @@ function ClubTable({ data, onSelectClub }) {
                                             />
                                         </TableCell>
 
-                                        {/* パワー */}
+                                        {/* クラブパワー */}
                                         <TableCell align="right">
                                             <Typography variant="body2" sx={{ fontWeight: 700, color: "#2563eb" }}>
                                                 {club.power}
@@ -239,7 +239,7 @@ function ClubTable({ data, onSelectClub }) {
                                             </Typography>
                                         </TableCell>
 
-                                        {/* コスパ度 */}
+                                        {/* 輩出力 */}
                                         <TableCell align="right">
                                             <Chip
                                                 label={

@@ -10,14 +10,14 @@ import Paper from "@mui/material/Paper";
 import { areaConfig, normalizeArea } from "../data/areas";
 
 function InsightsView({ data, players, onSelectClub }) {
-    // 1. 高コスパクラブ (Top 5)
+    // 1. 高輩出力クラブ (Top 5)
     const topHighCostClubs = useMemo(() => {
         return [...data]
             .sort((a, b) => b.costPerformance - a.costPerformance)
             .slice(0, 5);
     }, [data]);
 
-    // 2. 低コスパクラブ (Top 5)
+    // 2. 低輩出力クラブ (Top 5)
     const topLowCostClubs = useMemo(() => {
         return [...data]
             .sort((a, b) => a.costPerformance - b.costPerformance)
@@ -100,14 +100,14 @@ function InsightsView({ data, players, onSelectClub }) {
                                                 <Typography variant="caption" sx={{ fontWeight: 700, color: "#0f172a" }}>{s.players} 名</Typography>
                                             </Box>
                                             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                                                <Typography variant="caption" sx={{ color: "#64748b" }}>平均パワー</Typography>
+                                                <Typography variant="caption" sx={{ color: "#64748b" }}>平均クラブパワー</Typography>
                                                 <Typography variant="caption" sx={{ fontWeight: 700, color: "#2563eb" }}>{avgPower}</Typography>
                                             </Box>
 
                                             {s.bestClub && (
                                                 <Box sx={{ mt: 1, pt: 1, borderTop: "1px solid #f1f5f9" }}>
                                                     <Typography variant="caption" sx={{ color: "#94a3b8", display: "block", fontSize: "0.68rem" }}>
-                                                        最高コスパクラブ:
+                                                        最高輩出力クラブ:
                                                     </Typography>
                                                     <Typography
                                                         variant="caption"
@@ -134,12 +134,12 @@ function InsightsView({ data, players, onSelectClub }) {
 
             {/* ランキング3列グリッド */}
             <Grid container spacing={2.5}>
-                {/* 1. 高コスパクラブ Top 5 */}
+                {/* 1. 高輩出力クラブ Top 5 */}
                 <Grid item xs={12} md={4}>
                     <Card sx={{ bgcolor: "#ffffff", border: "1px solid #e2e8f0", height: "100%" }}>
                         <CardContent sx={{ p: 2.5 }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#15803d", mb: 0.3 }}>
-                                高コスパクラブ TOP 5
+                                高輩出力クラブ TOP 5
                             </Typography>
                             <Typography variant="caption" sx={{ color: "#64748b", display: "block", mb: 2 }}>
                                 予測選手数よりも多く選手を輩出
@@ -172,7 +172,7 @@ function InsightsView({ data, players, onSelectClub }) {
                                                     {club.club}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: "#64748b" }}>
-                                                    パワー: {club.power} / 選手: {club.playerCount}名
+                                                    クラブパワー: {club.power} / 選手: {club.playerCount}名
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -233,7 +233,7 @@ function InsightsView({ data, players, onSelectClub }) {
                                                     {club.club}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: "#64748b" }}>
-                                                    パワー: {club.power} ({club.area})
+                                                    クラブパワー: {club.power} ({club.area})
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -256,15 +256,15 @@ function InsightsView({ data, players, onSelectClub }) {
                     </Card>
                 </Grid>
 
-                {/* 3. 低コスパクラブ Top 5 */}
+                {/* 3. 低輩出力クラブ Top 5 */}
                 <Grid item xs={12} md={4}>
                     <Card sx={{ bgcolor: "#ffffff", border: "1px solid #e2e8f0", height: "100%" }}>
                         <CardContent sx={{ p: 2.5 }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#b45309", mb: 0.3 }}>
-                                低コスパクラブ TOP 5
+                                低輩出力クラブ TOP 5
                             </Typography>
                             <Typography variant="caption" sx={{ color: "#64748b", display: "block", mb: 2 }}>
-                                パワーに対して選手数が控えめ
+                                クラブパワーに対して選手数が控えめ
                             </Typography>
 
                             <Stack spacing={1}>
@@ -294,7 +294,7 @@ function InsightsView({ data, players, onSelectClub }) {
                                                     {club.club}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: "#64748b" }}>
-                                                    パワー: {club.power} / 選手: {club.playerCount}名
+                                                    クラブパワー: {club.power} / 選手: {club.playerCount}名
                                                 </Typography>
                                             </Box>
                                         </Box>

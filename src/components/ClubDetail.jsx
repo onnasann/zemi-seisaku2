@@ -7,20 +7,13 @@ import Stack from "@mui/material/Stack";
 import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import Divider from "@mui/material/Divider";
-import { countryFlags, positionConfig, areaConfig } from "../data/areas";
+import { getCountryDisplayName, getCountryFlagCode, positionConfig } from "../data/areas";
 import { CloseIcon, TrophyIcon } from "./Icons";
 
 function ClubDetail({ club, players, onClose }) {
     if (!club) return null;
 
     const isHighCost = club.costPerformance > 0;
-    const areaInfo = areaConfig[club.normalizedArea || club.area] || {
-        color: "#2563eb",
-        bgLight: "#eff6ff",
-        border: "#bfdbfe",
-        textColor: "#1d4ed8"
-    };
-
     return (
         <Drawer
             anchor="right"
@@ -62,18 +55,8 @@ function ClubDetail({ club, players, onClose }) {
                     <CloseIcon sx={{ fontSize: 18 }} />
                 </IconButton>
 
-                {/* エリア & 順位バッジ */}
+                {/* 順位バッジ */}
                 <Stack direction="row" spacing={1} sx={{ mb: 1.2 }} alignItems="center">
-                    <Chip
-                        label={club.normalizedArea || club.area}
-                        size="small"
-                        sx={{
-                            bgcolor: areaInfo.bgLight,
-                            color: areaInfo.textColor,
-                            border: `1px solid ${areaInfo.border}`,
-                            fontWeight: 700
-                        }}
-                    />
                     {club.rank && (
                         <Chip
                             icon={<TrophyIcon sx={{ fontSize: 14, color: "#d97706 !important" }} />}
@@ -103,12 +86,12 @@ function ClubDetail({ club, players, onClose }) {
                     {club.club}
                 </Typography>
 
-                {/* コスパ度 */}
+                {/* 輩出力 */}
                 <Chip
                     label={
                         isHighCost
-                            ? `高コスパ（予測より +${club.costPerformance.toFixed(2)} 人）`
-                            : `低コスパ（予測より ${club.costPerformance.toFixed(2)} 人）`
+                            ? `高輩出力（予測より +${club.costPerformance.toFixed(2)} 人）`
+                            : `低輩出力（予測より ${club.costPerformance.toFixed(2)} 人）`
                     }
                     size="small"
                     sx={{
@@ -140,7 +123,7 @@ function ClubDetail({ club, players, onClose }) {
                         <Grid item xs={6}>
                             <Paper sx={{ p: 1.5, bgcolor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 2 }}>
                                 <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600 }}>
-                                    チームパワー
+                                    クラブパワー
                                 </Typography>
                                 <Typography variant="h6" sx={{ fontWeight: 800, color: "#2563eb", mt: 0.2 }}>
                                     {club.power}
@@ -169,7 +152,7 @@ function ClubDetail({ club, players, onClose }) {
                                 }}
                             >
                                 <Typography variant="caption" sx={{ color: isHighCost ? "#15803d" : "#b45309", fontWeight: 600 }}>
-                                    コスパ度指数
+                                    輩出力指数
                                 </Typography>
                                 <Typography
                                     variant="h6"
@@ -196,7 +179,8 @@ function ClubDetail({ club, players, onClose }) {
                         <Stack spacing={1}>
                             {players.map((player, idx) => {
                                 const rawCountry = player["国"]?.trim() || "";
-                                const flag = countryFlags[rawCountry] || "🌐";
+                                const flagCode = getCountryFlagCode(rawCountry);
+                                const countryName = getCountryDisplayName(rawCountry);
                                 const pos = player["ポジション"]?.trim() || "MF";
                                 const posConf = positionConfig[pos] || {
                                     color: "#475569",
@@ -223,15 +207,29 @@ function ClubDetail({ club, players, onClose }) {
                                         }}
                                     >
                                         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                                            <Typography variant="h6" sx={{ lineHeight: 1 }}>
-                                                {flag}
-                                            </Typography>
+                                            {flagCode ? (
+                                                <Box
+                                                    component="img"
+                                                    src={`https://flagcdn.com/${flagCode}.svg`}
+                                                    alt={`${countryName}の国旗`}
+                                                    sx={{
+                                                        width: 30,
+                                                        height: 20,
+                                                        objectFit: "cover",
+                                                        borderRadius: "2px",
+                                                        border: "1px solid #e2e8f0",
+                                                        flexShrink: 0
+                                                    }}
+                                                />
+                                            ) : (
+                                                <Typography variant="h6" sx={{ lineHeight: 1 }}>🌐</Typography>
+                                            )}
                                             <Box>
                                                 <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b" }}>
                                                     {player["選手名"]}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: "#64748b" }}>
-                                                    {rawCountry}
+                                                    {countryName}
                                                 </Typography>
                                             </Box>
                                         </Box>
