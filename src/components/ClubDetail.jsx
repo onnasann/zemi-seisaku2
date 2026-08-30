@@ -1,102 +1,261 @@
-import { countryFlags } from "../data/areas";
+import Drawer from "@mui/material/Drawer";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import Grid from "@mui/material/Grid";
+import Paper from "@mui/material/Paper";
+import Divider from "@mui/material/Divider";
+import { countryFlags, positionConfig, areaConfig } from "../data/areas";
+import { CloseIcon, TrophyIcon } from "./Icons";
 
-function ClubDetail({
-    club,
-    players,
-    onClose
-}) {
+function ClubDetail({ club, players, onClose }) {
+    if (!club) return null;
+
+    const isHighCost = club.costPerformance > 0;
+    const areaInfo = areaConfig[club.normalizedArea || club.area] || {
+        color: "#2563eb",
+        bgLight: "#eff6ff",
+        border: "#bfdbfe",
+        textColor: "#1d4ed8"
+    };
 
     return (
-        <div className="club-detail">
-
-            {/* =========================
-                閉じるボタン
-            ========================= */}
-            <button
-                className="close-button"
-                onClick={onClose}
+        <Drawer
+            anchor="right"
+            open={Boolean(club)}
+            onClose={onClose}
+            PaperProps={{
+                sx: {
+                    width: { xs: "100%", sm: 420, md: 460 },
+                    bgcolor: "#ffffff",
+                    borderLeft: "1px solid #e2e8f0",
+                    boxShadow: "-4px 0 20px rgba(0, 0, 0, 0.08)",
+                    p: 0
+                }
+            }}
+        >
+            {/* ヘッダー */}
+            <Box
+                sx={{
+                    p: 3,
+                    bgcolor: "#f8fafc",
+                    borderBottom: "1px solid #e2e8f0",
+                    position: "relative"
+                }}
             >
-                ×
-            </button>
+                {/* 閉じるボタン */}
+                <IconButton
+                    onClick={onClose}
+                    size="small"
+                    sx={{
+                        position: "absolute",
+                        top: 14,
+                        right: 14,
+                        color: "#64748b",
+                        bgcolor: "#ffffff",
+                        border: "1px solid #e2e8f0",
+                        "&:hover": { bgcolor: "#f1f5f9", color: "#0f172a" }
+                    }}
+                >
+                    <CloseIcon sx={{ fontSize: 18 }} />
+                </IconButton>
 
-            {/* =========================
-                クラブ名
-            ========================= */}
-            <h2>
-                {club.club}
-            </h2>
+                {/* エリア & 順位バッジ */}
+                <Stack direction="row" spacing={1} sx={{ mb: 1.2 }} alignItems="center">
+                    <Chip
+                        label={club.normalizedArea || club.area}
+                        size="small"
+                        sx={{
+                            bgcolor: areaInfo.bgLight,
+                            color: areaInfo.textColor,
+                            border: `1px solid ${areaInfo.border}`,
+                            fontWeight: 700
+                        }}
+                    />
+                    {club.rank && (
+                        <Chip
+                            icon={<TrophyIcon sx={{ fontSize: 14, color: "#d97706 !important" }} />}
+                            label={`世界第 ${club.rank} 位`}
+                            size="small"
+                            sx={{
+                                bgcolor: "#fffbeb",
+                                color: "#b45309",
+                                border: "1px solid #fde68a",
+                                fontWeight: 700
+                            }}
+                        />
+                    )}
+                </Stack>
 
-            {/* =========================
-                クラブ情報
-            ========================= */}
-            <p>
-                出場選手：
-                {club.playerCount}人
-            </p>
+                {/* クラブ名 */}
+                <Typography
+                    variant="h5"
+                    component="h2"
+                    sx={{
+                        fontWeight: 800,
+                        color: "#0f172a",
+                        mb: 1.2,
+                        pr: 4
+                    }}
+                >
+                    {club.club}
+                </Typography>
 
-            <p>
-                チームパワー：
-                {club.power}
-            </p>
+                {/* コスパ度 */}
+                <Chip
+                    label={
+                        isHighCost
+                            ? `高コスパ（予測より +${club.costPerformance.toFixed(2)} 人）`
+                            : `低コスパ（予測より ${club.costPerformance.toFixed(2)} 人）`
+                    }
+                    size="small"
+                    sx={{
+                        bgcolor: isHighCost ? "#f0fdf4" : "#fffbeb",
+                        color: isHighCost ? "#15803d" : "#b45309",
+                        border: `1px solid ${isHighCost ? "#bbf7d0" : "#fde68a"}`,
+                        fontWeight: 700,
+                        fontSize: "0.78rem"
+                    }}
+                />
+            </Box>
 
-            <p>
-                ランキング：
-                {club.rank}位
-            </p>
+            {/* スクロールコンテンツ */}
+            <Box sx={{ p: 3, overflowY: "auto", flex: 1 }}>
+                <Stack spacing={2.5}>
+                    {/* 4項目メトリクス */}
+                    <Grid container spacing={1.5}>
+                        <Grid item xs={6}>
+                            <Paper sx={{ p: 1.5, bgcolor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 2 }}>
+                                <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600 }}>
+                                    出場選手数
+                                </Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a", mt: 0.2 }}>
+                                    {club.playerCount} 名
+                                </Typography>
+                            </Paper>
+                        </Grid>
 
-            <p>
-                エリア：
-                {club.area}
-            </p>
+                        <Grid item xs={6}>
+                            <Paper sx={{ p: 1.5, bgcolor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 2 }}>
+                                <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600 }}>
+                                    チームパワー
+                                </Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: "#2563eb", mt: 0.2 }}>
+                                    {club.power}
+                                </Typography>
+                            </Paper>
+                        </Grid>
 
-            {/* =========================
-                選手一覧
-            ========================= */}
-            <h3>
-                出場選手
-            </h3>
+                        <Grid item xs={6}>
+                            <Paper sx={{ p: 1.5, bgcolor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 2 }}>
+                                <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600 }}>
+                                    予測選手数
+                                </Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 700, color: "#475569", mt: 0.2 }}>
+                                    {club.predictedPlayers != null ? club.predictedPlayers.toFixed(2) : "-"} 名
+                                </Typography>
+                            </Paper>
+                        </Grid>
 
-            <div className="club-player-list">
+                        <Grid item xs={6}>
+                            <Paper
+                                sx={{
+                                    p: 1.5,
+                                    bgcolor: isHighCost ? "#f0fdf4" : "#fffbeb",
+                                    border: `1px solid ${isHighCost ? "#bbf7d0" : "#fde68a"}`,
+                                    borderRadius: 2
+                                }}
+                            >
+                                <Typography variant="caption" sx={{ color: isHighCost ? "#15803d" : "#b45309", fontWeight: 600 }}>
+                                    コスパ度指数
+                                </Typography>
+                                <Typography
+                                    variant="h6"
+                                    sx={{
+                                        fontWeight: 800,
+                                        color: isHighCost ? "#15803d" : "#b45309",
+                                        mt: 0.2
+                                    }}
+                                >
+                                    {club.costPerformance > 0 ? `+${club.costPerformance.toFixed(2)}` : club.costPerformance.toFixed(2)}
+                                </Typography>
+                            </Paper>
+                        </Grid>
+                    </Grid>
 
-                {players.map((player, index) => (
+                    <Divider sx={{ borderColor: "#f1f5f9" }} />
 
-                    <div
-                        key={index}
-                        className="player-item"
-                    >
+                    {/* 所属選手一覧（絞り込みなしで直接表示） */}
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#0f172a", mb: 1.5 }}>
+                            出場選手一覧（{players.length}名）
+                        </Typography>
 
-                        {/* 国旗 */}
-                        <span className="player-country">
+                        <Stack spacing={1}>
+                            {players.map((player, idx) => {
+                                const rawCountry = player["国"]?.trim() || "";
+                                const flag = countryFlags[rawCountry] || "🌐";
+                                const pos = player["ポジション"]?.trim() || "MF";
+                                const posConf = positionConfig[pos] || {
+                                    color: "#475569",
+                                    bgLight: "#f1f5f9",
+                                    border: "#e2e8f0"
+                                };
 
-                            {
-                                countryFlags[
-                                player["国"]?.trim()
-                                ] || "🌐"
-                            }
+                                return (
+                                    <Paper
+                                        key={idx}
+                                        sx={{
+                                            p: 1.2,
+                                            px: 1.6,
+                                            bgcolor: "#ffffff",
+                                            border: "1px solid #e2e8f0",
+                                            borderRadius: 2,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            "&:hover": {
+                                                bgcolor: "#f8fafc",
+                                                borderColor: "#cbd5e1"
+                                            }
+                                        }}
+                                    >
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                            <Typography variant="h6" sx={{ lineHeight: 1 }}>
+                                                {flag}
+                                            </Typography>
+                                            <Box>
+                                                <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b" }}>
+                                                    {player["選手名"]}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: "#64748b" }}>
+                                                    {rawCountry}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
 
-                        </span>
-
-                        {/* 選手名 */}
-                        <span className="player-name">
-
-                            {player["選手名"]}
-
-                        </span>
-
-                        {/* ポジション */}
-                        <span className="player-position">
-
-                            {player["ポジション"]}
-
-                        </span>
-
-                    </div>
-
-                ))}
-
-            </div>
-
-        </div>
+                                        <Chip
+                                            label={pos}
+                                            size="small"
+                                            sx={{
+                                                bgcolor: posConf.bgLight,
+                                                color: posConf.color,
+                                                border: `1px solid ${posConf.border || posConf.color}`,
+                                                fontWeight: 700,
+                                                fontSize: "0.72rem",
+                                                minWidth: 40
+                                            }}
+                                        />
+                                    </Paper>
+                                );
+                            })}
+                        </Stack>
+                    </Box>
+                </Stack>
+            </Box>
+        </Drawer>
     );
 }
 

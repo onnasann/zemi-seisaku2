@@ -1,13 +1,93 @@
-export const areas = {
-    "北中米": [180, 150],
-    "南アメリカ": [150, 120],
-    "ヨーロッパ": [120, 55],
-    "アジア・オセアニア": [55, 20],
-    "アフリカ": [20, 0]
+export const areaConfig = {
+    "ヨーロッパ": {
+        id: "europe",
+        name: "ヨーロッパ",
+        color: "#3b82f6", // Blue
+        bgLight: "#eff6ff",
+        border: "#bfdbfe",
+        textColor: "#1d4ed8"
+    },
+    "南アメリカ": {
+        id: "south",
+        name: "南アメリカ",
+        color: "#0284c7", // Sky Blue
+        bgLight: "#f0f9ff",
+        border: "#bae6fd",
+        textColor: "#0369a1"
+    },
+    "北中米": {
+        id: "north",
+        name: "北中米",
+        color: "#e11d48", // Rose Red
+        bgLight: "#fff1f2",
+        border: "#fecdd3",
+        textColor: "#be123c"
+    },
+    "アジア・オセアニア": {
+        id: "asia",
+        name: "アジア・オセアニア",
+        color: "#16a34a", // Green
+        bgLight: "#f0fdf4",
+        border: "#bbf7d0",
+        textColor: "#15803d"
+    },
+    "アフリカ": {
+        id: "africa",
+        name: "アフリカ",
+        color: "#d97706", // Amber / Orange
+        bgLight: "#fffbeb",
+        border: "#fde68a",
+        textColor: "#b45309"
+    }
+};
+
+export const normalizeArea = (areaRaw) => {
+    if (!areaRaw) return "その他";
+    const a = areaRaw.trim();
+    if (a === "アジア" || a === "オセアニア" || a === "アジア・オセアニア") {
+        return "アジア・オセアニア";
+    }
+    if (areaConfig[a]) {
+        return a;
+    }
+    return a;
+};
+
+export const positionConfig = {
+    "FW": {
+        name: "フォワード",
+        color: "#e11d48",
+        bgLight: "#ffe4e6",
+        border: "#fecdd3"
+    },
+    "MF": {
+        name: "ミッドフィールダー",
+        color: "#16a34a",
+        bgLight: "#dcfce7",
+        border: "#bbf7d0"
+    },
+    "DF": {
+        name: "ディフェンダー",
+        color: "#2563eb",
+        bgLight: "#dbeafe",
+        border: "#bfdbfe"
+    },
+    "GK": {
+        name: "ゴールキーパー",
+        color: "#d97706",
+        bgLight: "#fef3c7",
+        border: "#fde68a"
+    },
+    "MF/FW": {
+        name: "MF/FW",
+        color: "#7c3aed",
+        bgLight: "#f3e8ff",
+        border: "#ddd6fe"
+    }
 };
 
 export const countryFlags = {
-    "イングランド": "🏴",
+    "イングランド": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
     "エクアドル": "🇪🇨",
     "スウェーデン": "🇸🇪",
     "スペイン": "🇪🇸",
@@ -34,7 +114,7 @@ export const countryFlags = {
     "ウルグアイ": "🇺🇾",
     "アルゼンチン": "🇦🇷",
     "コートジボワール": "🇨🇮",
-    "スコットランド": "🏴",
+    "スコットランド": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
     "トルコ": "🇹🇷",
     "スイス": "🇨🇭",
     "アメリカ": "🇺🇸",
@@ -54,5 +134,15 @@ export const countryFlags = {
     "オーストラリア": "🇦🇺",
     "パナマ": "🇵🇦",
     "南アフリカ": "🇿🇦",
-    "カタール": "🇶🇦"
+    "カタール": "🇶🇦",
+    "イタリア": "🇮🇹",
+    "デンマーク": "🇩🇰",
+    "ポーランド": "🇵🇱",
+    "セルビア": "🇷🇸",
+    "ウクライナ": "🇺🇦",
+    "ウェールズ": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+    "ナイジェリア": "🇳🇬",
+    "カメルーン": "🇨🇲",
+    "チリ": "🇨🇱",
+    "ペルー": "🇵🇪"
 };
