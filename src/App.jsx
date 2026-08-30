@@ -27,13 +27,7 @@ function App() {
     // フィルター状態
     // ========================================
     const [searchText, setSearchText] = useState("");
-    const [selectedAreas, setSelectedAreas] = useState([
-        "ヨーロッパ",
-        "南アメリカ",
-        "北中米",
-        "アジア・オセアニア",
-        "アフリカ"
-    ]);
+    const [selectedAreas, setSelectedAreas] = useState(Object.keys(areaConfig));
     const [minPlayers, setMinPlayers] = useState(1);
 
     // ========================================
@@ -138,22 +132,29 @@ function App() {
             });
     }, []);
 
-    // フィルター操作
+    // エリアクリック時の切り替え（クリックしたエリアを表示）
     const toggleArea = (area) => {
+        const allAreaKeys = Object.keys(areaConfig);
+
+        // 全エリアが表示されている場合、クリックしたエリア「のみ」を表示する
+        if (selectedAreas.length === allAreaKeys.length) {
+            setSelectedAreas([area]);
+            return;
+        }
+
+        // すでに選択されている場合
         if (selectedAreas.includes(area)) {
-            setSelectedAreas(selectedAreas.filter((a) => a !== area));
+            const next = selectedAreas.filter((a) => a !== area);
+            // 全て解除されたら全表示に戻す
+            setSelectedAreas(next.length === 0 ? allAreaKeys : next);
         } else {
+            // 未選択のエリアをクリックした場合は追加表示
             setSelectedAreas([...selectedAreas, area]);
         }
     };
 
     const toggleAllAreas = () => {
-        const all = Object.keys(areaConfig);
-        if (selectedAreas.length === all.length) {
-            setSelectedAreas([]);
-        } else {
-            setSelectedAreas(all);
-        }
+        setSelectedAreas(Object.keys(areaConfig));
     };
 
     const handleResetFilters = () => {

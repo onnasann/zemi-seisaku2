@@ -10,10 +10,10 @@ export const areaConfig = {
     "南アメリカ": {
         id: "south",
         name: "南アメリカ",
-        color: "#0284c7", // Sky Blue
-        bgLight: "#f0f9ff",
-        border: "#bae6fd",
-        textColor: "#0369a1"
+        color: "#9333ea", // Purple
+        bgLight: "#faf5ff",
+        border: "#e9d5ff",
+        textColor: "#7e22ce"
     },
     "北中米": {
         id: "north",
@@ -80,9 +80,9 @@ export const positionConfig = {
     },
     "MF/FW": {
         name: "MF/FW",
-        color: "#7c3aed",
-        bgLight: "#f3e8ff",
-        border: "#ddd6fe"
+        color: "#0284c7",
+        bgLight: "#f0f9ff",
+        border: "#bae6fd"
     }
 };
 
