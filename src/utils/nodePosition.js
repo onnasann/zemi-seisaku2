@@ -39,15 +39,15 @@ export function createNodes(
 
         if (costRange) {
             // ========================================
-            // 範囲選択モード: costRange.min → 0°, costRange.max → 180° に線形マッピング
-            // 右端(0°) = 低輩出力, 左端(180°) = 高輩出力
+            // 範囲選択モード: costRange.min → 180°, costRange.max → 0° に線形マッピング
+            // 左端(180°) = 低輩出力, 右端(0°) = 高輩出力
             // ========================================
             const span = costRange.max - costRange.min;
             if (span <= 0) {
                 baseAngle = 90;
             } else {
                 const ratio = (club.costPerformance - costRange.min) / span;
-                baseAngle = Math.max(0, Math.min(1, ratio)) * 180;
+                baseAngle = (1 - Math.max(0, Math.min(1, ratio))) * 180;
             }
         } else {
             // ========================================
@@ -55,10 +55,10 @@ export function createNodes(
             // ========================================
             if (club.costPerformance > 0) {
                 const ratio = maxCost > 0 ? club.costPerformance / maxCost : 0;
-                baseAngle = 91 + Math.min(1, Math.max(0, ratio)) * 82;
+                baseAngle = 89 - Math.min(1, Math.max(0, ratio)) * 82;
             } else if (club.costPerformance < 0) {
                 const ratio = minCost < 0 ? Math.abs(club.costPerformance) / Math.abs(minCost) : 0;
-                baseAngle = 89 - Math.min(1, Math.max(0, ratio)) * 82;
+                baseAngle = 91 + Math.min(1, Math.max(0, ratio)) * 82;
             } else {
                 baseAngle = 90;
             }
@@ -83,8 +83,8 @@ export function createNodes(
 
         // 通常モード: 境界線（左/右）の厳格な維持
         if (!costRange) {
-            if (club.costPerformance > 0 && x > centerX - 1) x = centerX - 1;
-            else if (club.costPerformance < 0 && x < centerX + 1) x = centerX + 1;
+            if (club.costPerformance > 0 && x < centerX + 1) x = centerX + 1;
+            else if (club.costPerformance < 0 && x > centerX - 1) x = centerX - 1;
         }
 
         const normalizedArea = normalizeArea(club.area);
@@ -159,17 +159,17 @@ export function createNodes(
                     // 通常モード: 各ノードの所属領域（プラス側 / マイナス側）を厳格に制限
                     if (a.costPerformance > 0) {
                         newAngleA = Math.max(
-                            91,
+                            4,
                             Math.min(
-                                176,
+                                89,
                                 Math.max(a.baseAngle - MAX_ANGLE_MOVE, Math.min(a.baseAngle + MAX_ANGLE_MOVE, newAngleA))
                             )
                         );
                     } else if (a.costPerformance < 0) {
                         newAngleA = Math.max(
-                            4,
+                            91,
                             Math.min(
-                                89,
+                                176,
                                 Math.max(a.baseAngle - MAX_ANGLE_MOVE, Math.min(a.baseAngle + MAX_ANGLE_MOVE, newAngleA))
                             )
                         );
@@ -177,17 +177,17 @@ export function createNodes(
 
                     if (b.costPerformance > 0) {
                         newAngleB = Math.max(
-                            91,
+                            4,
                             Math.min(
-                                176,
+                                89,
                                 Math.max(b.baseAngle - MAX_ANGLE_MOVE, Math.min(b.baseAngle + MAX_ANGLE_MOVE, newAngleB))
                             )
                         );
                     } else if (b.costPerformance < 0) {
                         newAngleB = Math.max(
-                            4,
+                            91,
                             Math.min(
-                                89,
+                                176,
                                 Math.max(b.baseAngle - MAX_ANGLE_MOVE, Math.min(b.baseAngle + MAX_ANGLE_MOVE, newAngleB))
                             )
                         );
@@ -224,10 +224,10 @@ export function createNodes(
 
                 // 通常モード: 境界線（centerX）の厳格な維持
                 if (!costRange) {
-                    if (a.costPerformance > 0 && a.x > centerX - 1) a.x = centerX - 1;
-                    if (a.costPerformance < 0 && a.x < centerX + 1) a.x = centerX + 1;
-                    if (b.costPerformance > 0 && b.x > centerX - 1) b.x = centerX - 1;
-                    if (b.costPerformance < 0 && b.x < centerX + 1) b.x = centerX + 1;
+                    if (a.costPerformance > 0 && a.x < centerX + 1) a.x = centerX + 1;
+                    if (a.costPerformance < 0 && a.x > centerX - 1) a.x = centerX - 1;
+                    if (b.costPerformance > 0 && b.x < centerX + 1) b.x = centerX + 1;
+                    if (b.costPerformance < 0 && b.x > centerX - 1) b.x = centerX - 1;
                 }
             }
         }
@@ -258,10 +258,10 @@ export function createNodes(
 
         // 通常モード: 境界線（centerX）の最終保証
         if (!costRange) {
-            if (node.costPerformance > 0 && node.x > centerX - 1) {
-                node.x = centerX - 1;
-            } else if (node.costPerformance < 0 && node.x < centerX + 1) {
+            if (node.costPerformance > 0 && node.x < centerX + 1) {
                 node.x = centerX + 1;
+            } else if (node.costPerformance < 0 && node.x > centerX - 1) {
+                node.x = centerX - 1;
             }
         }
     });

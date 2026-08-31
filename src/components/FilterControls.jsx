@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -15,6 +16,7 @@ import {
     CloseIcon,
     RefreshIcon
 } from "./Icons";
+import { normalizeSearchText } from "../utils/searchText";
 
 function FilterControls({
     searchText,
@@ -22,6 +24,11 @@ function FilterControls({
     searchOptions,
     minPlayers,
     setMinPlayers,
+    costBounds,
+    costRange,
+    setCostRange,
+    draftCostRange,
+    setDraftCostRange,
     matchedCount,
     totalCount,
     totalPlayers,
@@ -29,6 +36,16 @@ function FilterControls({
     isFiltered,
     onResetFilters
 }) {
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const displayedCostRange = draftCostRange || costRange || [costBounds.min, costBounds.max];
+    const predictedOptions = useMemo(() => {
+        const query = normalizeSearchText(searchText);
+        if (!query) return [];
+        return searchOptions
+            .filter((option) => normalizeSearchText(option).includes(query))
+            .slice(0, 8);
+    }, [searchOptions, searchText]);
+
     return (
         <Card
             sx={{
@@ -75,7 +92,7 @@ function FilterControls({
                     )}
                 </Stack>
 
-                {/* 検索バー & リセットボタン & 該当数 */}
+                {/* リセットボタン & 該当数 */}
                 <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
                     {isFiltered && (
                         <Button
@@ -99,21 +116,17 @@ function FilterControls({
                         </Button>
                     )}
 
-                    {/* 検索入力 */}
-                    <Box sx={{ width: { xs: "100%", sm: 220, md: 260 } }}>
+                    {/* 右上: 予測検索 */}
+                    <Box sx={{ width: { xs: "100%", sm: 240, md: 280 }, position: "relative" }}>
                         <TextField
                             size="small"
                             fullWidth
-                            placeholder="クラブ名を検索..."
+                            placeholder="ひらがなでもクラブ検索..."
                             value={searchText}
                             onChange={(event) => setSearchText(event.target.value)}
-                            inputProps={{ list: "club-search-options" }}
-                            sx={{
-                                "& .MuiOutlinedInput-root": {
-                                    height: 34,
-                                    fontSize: "0.85rem"
-                                }
-                            }}
+                            onFocus={() => setIsSearchFocused(true)}
+                            onBlur={() => setIsSearchFocused(false)}
+                            sx={{ "& .MuiOutlinedInput-root": { height: 34, fontSize: "0.85rem" } }}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
@@ -122,22 +135,37 @@ function FilterControls({
                                 ),
                                 endAdornment: searchText ? (
                                     <InputAdornment position="end">
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => setSearchText("")}
-                                            edge="end"
-                                        >
+                                        <IconButton size="small" onClick={() => setSearchText("")} edge="end">
                                             <CloseIcon sx={{ fontSize: 14 }} />
                                         </IconButton>
                                     </InputAdornment>
                                 ) : null
                             }}
                         />
-                        <datalist id="club-search-options">
-                            {searchOptions.map((option) => (
-                                <option key={option} value={option} />
-                            ))}
-                        </datalist>
+                        {isSearchFocused && predictedOptions.length > 0 && (
+                            <Box sx={{
+                                position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
+                                zIndex: 30, bgcolor: "#ffffff", border: "1px solid #cbd5e1",
+                                borderRadius: 1.5, boxShadow: "0 8px 20px rgba(15,23,42,0.14)", overflow: "hidden"
+                            }}>
+                                {predictedOptions.map((option) => (
+                                    <Box
+                                        key={option}
+                                        onMouseDown={(event) => {
+                                            event.preventDefault();
+                                            setSearchText(option);
+                                            setIsSearchFocused(false);
+                                        }}
+                                        sx={{
+                                            px: 1.5, py: 0.8, cursor: "pointer", fontSize: "0.82rem", color: "#1e293b",
+                                            "&:hover": { bgcolor: "#eff6ff", color: "#1d4ed8" }
+                                        }}
+                                    >
+                                        {option}
+                                    </Box>
+                                ))}
+                            </Box>
+                        )}
                     </Box>
 
                     {/* 該当件数 */}
@@ -159,7 +187,7 @@ function FilterControls({
                     }}
                 >
                     {/* 選手数スライダー */}
-                    <Box sx={{ width: { xs: "100%", md: 360 } }}>
+                    <Box sx={{ width: { xs: "100%", md: "auto" }, flex: { md: 1 }, minWidth: { md: 260 } }}>
                         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.2, alignItems: "center" }}>
                             <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700 }}>
                                 出場選手数:
@@ -183,6 +211,73 @@ function FilterControls({
                                     { value: 15, label: "15人" }
                                 ]}
                                 sx={{
+                                    "& .MuiSlider-markLabel": {
+                                        fontSize: "0.72rem",
+                                        color: "#94a3b8"
+                                    }
+                                }}
+                            />
+                        </Box>
+                    </Box>
+
+                    {/* 輩出力範囲スライダー */}
+                    <Box sx={{ width: { xs: "100%", md: "auto" }, flex: { md: 1 }, minWidth: { md: 280 } }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.2, alignItems: "center" }}>
+                            <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700 }}>
+                                輩出力の表示範囲:
+                            </Typography>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                {(costRange || draftCostRange) && (
+                                    <Button
+                                        size="small"
+                                        onClick={() => {
+                                            setCostRange(null);
+                                            setDraftCostRange(null);
+                                        }}
+                                        sx={{ minWidth: 0, p: 0.2, fontSize: "0.68rem" }}
+                                    >
+                                        リセット
+                                    </Button>
+                                )}
+                                <Button
+                                    size="small"
+                                    variant="contained"
+                                    disabled={!draftCostRange}
+                                    onClick={() => {
+                                        if (!draftCostRange) return;
+                                        const isFullRange =
+                                            draftCostRange[0] === costBounds.min &&
+                                            draftCostRange[1] === costBounds.max;
+                                        setCostRange(isFullRange ? null : draftCostRange);
+                                        setDraftCostRange(null);
+                                    }}
+                                    sx={{ px: 1.4, py: 0.2, minWidth: 52, fontSize: "0.7rem" }}
+                                >
+                                    セット
+                                </Button>
+                            </Stack>
+                        </Box>
+                        <Box sx={{ px: 1 }}>
+                            <Slider
+                                value={displayedCostRange}
+                                min={costBounds.min}
+                                max={costBounds.max}
+                                step={0.1}
+                                disableSwap
+                                valueLabelDisplay="auto"
+                                valueLabelFormat={(value) => `${value >= 0 ? "+" : ""}${value.toFixed(1)}`}
+                                onChange={(_, value) => {
+                                    const nextRange = value;
+                                    if (nextRange[1] - nextRange[0] >= 0.1) {
+                                        setDraftCostRange(nextRange);
+                                    }
+                                }}
+                                marks={[
+                                    { value: costBounds.min, label: `${costBounds.min >= 0 ? "+" : ""}${costBounds.min.toFixed(1)}` },
+                                    { value: costBounds.max, label: `${costBounds.max >= 0 ? "+" : ""}${costBounds.max.toFixed(1)}` }
+                                ]}
+                                sx={{
+                                    color: "#6366f1",
                                     "& .MuiSlider-markLabel": {
                                         fontSize: "0.72rem",
                                         color: "#94a3b8"

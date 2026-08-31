@@ -4,7 +4,7 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { areaConfig } from "../data/areas";
 
-function Legend({ selectedAreas, toggleArea, areaCounts }) {
+function Legend({ data = [], selectedAreas, toggleArea }) {
     return (
         <Paper
             elevation={0}
@@ -30,13 +30,15 @@ function Legend({ selectedAreas, toggleArea, areaCounts }) {
                     mb: 0.8
                 }}
             >
-                エリア別（クリックで切替）
+                エリア別（複数選択可）
             </Typography>
 
             <Stack spacing={0.5}>
                 {Object.entries(areaConfig).map(([areaName, config]) => {
+                    const count = data.filter(
+                        (club) => (club.normalizedArea || club.area) === areaName
+                    ).length;
                     const isSelected = selectedAreas.includes(areaName);
-                    const count = areaCounts[areaName] || 0;
 
                     return (
                         <Box
@@ -49,13 +51,10 @@ function Legend({ selectedAreas, toggleArea, areaCounts }) {
                                 px: 1,
                                 py: 0.4,
                                 borderRadius: 1,
-                                cursor: "pointer",
                                 bgcolor: isSelected ? "#f8fafc" : "transparent",
-                                opacity: isSelected ? 1 : 0.4,
-                                "&:hover": {
-                                    bgcolor: "#f1f5f9",
-                                    opacity: 1
-                                }
+                                opacity: isSelected ? 1 : 0.35,
+                                cursor: "pointer",
+                                "&:hover": { bgcolor: "#f1f5f9", opacity: 1 }
                             }}
                         >
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

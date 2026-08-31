@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
@@ -6,6 +6,7 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import BackCircle from "./BackCircle";
 import ClubCircle from "./ClubCircle";
+import Legend from "./Legend";
 import { createNodes } from "../utils/nodePosition";
 import { TrophyIcon } from "./Icons";
 
@@ -13,6 +14,10 @@ function CircleGraph({
     data,
     players,
     minPlayers,
+    costRange,
+    draftCostRange,
+    selectedAreas,
+    toggleArea,
     searchText,
     selectedClub,
     setSelectedClub
@@ -20,13 +25,6 @@ function CircleGraph({
     const containerRef = useRef(null);
     const [dimensions, setDimensions] = useState({ width: 1000, height: 600 });
     const [hoverClub, setHoverClub] = useState(null);
-
-    // ──────────────────────────────────────
-    // 2点範囲選択モード状態
-    // ──────────────────────────────────────
-    const [isRangeMode, setIsRangeMode] = useState(false);
-    // rangeEndpoints: クリックした順に最大2つのクラブオブジェクト
-    const [rangeEndpoints, setRangeEndpoints] = useState([]);
 
     // リサイズ自動追従
     useEffect(() => {
@@ -70,61 +68,21 @@ function CircleGraph({
         };
     }, [data]);
 
-    // ──────────────────────────────────────
-    // 2点範囲選択: アクティブな costRange
-    // rangeEndpoints が 2つ & 輩出力が異なる場合のみ有効
-    // ──────────────────────────────────────
     const activeCostRange = useMemo(() => {
-        if (!isRangeMode || rangeEndpoints.length < 2) return null;
-        const cost1 = rangeEndpoints[0].costPerformance;
-        const cost2 = rangeEndpoints[1].costPerformance;
-        if (cost1 === cost2) return null; // 輩出力が完全に同じ場合だけ無効
+        if (!costRange) return null;
         return {
-            min: Math.min(cost1, cost2),
-            max: Math.max(cost1, cost2)
+            min: costRange[0],
+            max: costRange[1]
         };
-    }, [isRangeMode, rangeEndpoints]);
+    }, [costRange]);
 
-    // ──────────────────────────────────────
-    // 2点範囲選択: ノードクリックハンドラ
-    // ──────────────────────────────────────
-    const handleRangeClick = useCallback((club) => {
-        setRangeEndpoints(prev => {
-            const idx = prev.findIndex(e => e.club === club.club);
-            if (idx >= 0) {
-                // 既に選択中 → 解除
-                return prev.filter((_, i) => i !== idx);
-            }
-            if (prev.length >= 2) {
-                // 3つ目は古い方を破棄
-                return [prev[1], club];
-            }
-            return [...prev, club];
-        });
-    }, []);
-
-    // 範囲モード ON/OFF トグル
-    const toggleRangeMode = useCallback(() => {
-        setIsRangeMode(prev => {
-            if (prev) {
-                // 終了: 選択をリセット
-                setRangeEndpoints([]);
-                return false;
-            }
-            setSelectedClub(null);
-            return true;
-        });
-    }, [setSelectedClub]);
-
-    // 2点範囲フィルタ
+    // スライダーで指定した輩出力範囲のフィルタ
     const filteredForNodes = useMemo(() => {
-        if (activeCostRange) {
-            return data.filter(c =>
-                c.costPerformance >= activeCostRange.min &&
-                c.costPerformance <= activeCostRange.max
-            );
-        }
-        return data;
+        return data.filter((club) => {
+            if (!activeCostRange) return true;
+            return club.costPerformance >= activeCostRange.min &&
+                club.costPerformance <= activeCostRange.max;
+        });
     }, [data, activeCostRange]);
 
     // ③ ノード計算（範囲モード時は costRange を渡す → 線形マッピング）
@@ -140,15 +98,6 @@ function CircleGraph({
         );
     }, [filteredForNodes, centerX, centerY, maxRadius, minPower, maxPower, activeCostRange]);
 
-    // 範囲モードのステータスメッセージ
-    const rangeModeMessage = (() => {
-        if (!isRangeMode) return null;
-        if (rangeEndpoints.length === 0) return "輩出力の異なるノードを2つクリックして範囲を設定";
-        if (rangeEndpoints.length === 1) return `「${rangeEndpoints[0].club}」を選択済み。もう1つクリックしてください`;
-        if (!activeCostRange) return "同じ輩出力のノードは選択できません。別のノードを選んでください";
-        return null;
-    })();
-
     return (
         <Card
             ref={containerRef}
@@ -157,17 +106,18 @@ function CircleGraph({
                 bgcolor: "#ffffff",
                 border: "1px solid #e2e8f0",
                 borderRadius: 3,
-                overflow: "hidden",
+                overflow: "visible",
+                mt: activeCostRange ? 4 : 0,
                 boxShadow: "0 1px 4px rgba(0, 0, 0, 0.04)",
                 minHeight: 520
             }}
         >
             {/* ─── 上部バナー: 範囲選択アクティブ ─── */}
-            {isRangeMode && activeCostRange && (
+            {activeCostRange && (
                 <Box
                     sx={{
                         position: "absolute",
-                        top: 12,
+                        top: -32,
                         left: "50%",
                         transform: "translateX(-50%)",
                         zIndex: 20,
@@ -214,32 +164,6 @@ function CircleGraph({
                 </Box>
             )}
 
-            {/* ─── 上部バナー: 範囲選択操作中 ─── */}
-            {isRangeMode && !activeCostRange && rangeModeMessage && (
-                <Box
-                    sx={{
-                        position: "absolute",
-                        top: 12,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        zIndex: 20,
-                        bgcolor: "rgba(15,23,42,0.85)",
-                        color: "#fff",
-                        borderRadius: 2,
-                        px: 2,
-                        py: 0.7,
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                        backdropFilter: "blur(4px)",
-                        pointerEvents: "none",
-                        whiteSpace: "nowrap"
-                    }}
-                >
-                    {rangeModeMessage}
-                </Box>
-            )}
-
             {/* SVG半円グラフ */}
             <svg
                 width={width}
@@ -259,6 +183,7 @@ function CircleGraph({
                     minCost={minCost}
                     maxCost={maxCost}
                     costRange={activeCostRange}
+                    previewCostRange={draftCostRange}
                 />
 
                 {/* クラブノード */}
@@ -266,80 +191,23 @@ function CircleGraph({
                     <ClubCircle
                         key={club.club}
                         club={club}
+                        selectedAreas={selectedAreas}
                         minPlayers={minPlayers}
                         searchText={searchText}
                         hoverClub={hoverClub}
                         setHoverClub={setHoverClub}
                         selectedClub={selectedClub}
                         setSelectedClub={setSelectedClub}
-                        isRangeMode={isRangeMode}
-                        rangeEndpoints={rangeEndpoints}
-                        activeCostRange={activeCostRange}
-                        onRangeClick={handleRangeClick}
                     />
                 ))}
             </svg>
 
-            {/* ─── 右下ボタン群 ─── */}
-            <Box
-                sx={{
-                    position: "absolute",
-                    bottom: 48,
-                    right: 16,
-                    zIndex: 15,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-end",
-                    gap: 1
-                }}
-            >
-                {/* 範囲選択モード: リセットボタン（範囲確定後） */}
-                {isRangeMode && rangeEndpoints.length > 0 && (
-                    <Box
-                        onClick={() => setRangeEndpoints([])}
-                        sx={{
-                            bgcolor: "#ffffff",
-                            border: "1.5px solid #6366f1",
-                            color: "#6366f1",
-                            borderRadius: 2,
-                            px: 1.5,
-                            py: 0.5,
-                            fontSize: "0.75rem",
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            boxShadow: "0 2px 6px rgba(99,102,241,0.15)",
-                            "&:hover": { bgcolor: "#eef2ff" },
-                            transition: "background 0.15s"
-                        }}
-                    >
-                        選択をリセット
-                    </Box>
-                )}
-
-                {/* 範囲選択モード: 終了ボタン */}
-                <Box
-                    onClick={toggleRangeMode}
-                    sx={{
-                        bgcolor: isRangeMode ? "#6366f1" : "#ffffff",
-                        border: "1.5px solid #6366f1",
-                        color: isRangeMode ? "#ffffff" : "#6366f1",
-                        borderRadius: 2,
-                        px: 1.5,
-                        py: 0.5,
-                        fontSize: "0.75rem",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        boxShadow: "0 2px 6px rgba(99,102,241,0.2)",
-                        "&:hover": {
-                            bgcolor: isRangeMode ? "#4f46e5" : "#eef2ff"
-                        },
-                        transition: "all 0.15s"
-                    }}
-                >
-                    {isRangeMode ? "範囲選択モードを終了" : "2点範囲選択"}
-                </Box>
-
-            </Box>
+            {/* 左上: ノード色のエリア凡例 */}
+            <Legend
+                data={data}
+                selectedAreas={selectedAreas}
+                toggleArea={toggleArea}
+            />
 
             {/* 右上: ホバー情報ツールチップ */}
             {hoverClub && (
@@ -427,9 +295,7 @@ function CircleGraph({
                         variant="caption"
                         sx={{ display: "block", textAlign: "center", color: "#94a3b8", fontSize: "0.68rem", mt: 1 }}
                     >
-                        {isRangeMode && !activeCostRange
-                            ? "クリックして範囲の端点に選択"
-                            : "クリックで所属選手一覧を表示"}
+                        クリックで所属選手一覧を表示
                     </Typography>
                 </Paper>
             )}

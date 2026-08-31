@@ -11,7 +11,8 @@ import { lightTheme } from "./theme";
 import FilterControls from "./components/FilterControls";
 import CircleGraph from "./components/CircleGraph";
 import ClubDetail from "./components/ClubDetail";
-import { normalizeArea } from "./data/areas";
+import { areaConfig, normalizeArea } from "./data/areas";
+import { normalizeSearchText } from "./utils/searchText";
 
 import "./CircleGraph.css";
 
@@ -28,6 +29,9 @@ function App() {
     // ========================================
     const [searchText, setSearchText] = useState("");
     const [minPlayers, setMinPlayers] = useState(1);
+    const [selectedAreas, setSelectedAreas] = useState(Object.keys(areaConfig));
+    const [costRange, setCostRange] = useState(null);
+    const [draftCostRange, setDraftCostRange] = useState(null);
 
     // ========================================
     // クラブ詳細パネル
@@ -134,10 +138,36 @@ function App() {
     const handleResetFilters = () => {
         setSearchText("");
         setMinPlayers(1);
+        setSelectedAreas(Object.keys(areaConfig));
+        setCostRange(null);
+        setDraftCostRange(null);
     };
 
     const isFiltered =
-        Boolean(searchText) || minPlayers > 1;
+        Boolean(searchText) ||
+        minPlayers > 1 ||
+        Boolean(costRange) ||
+        selectedAreas.length < Object.keys(areaConfig).length;
+
+    const toggleArea = (area) => {
+        setSelectedAreas((current) => {
+            const allAreas = Object.keys(areaConfig);
+            if (current.length === allAreas.length) return [area];
+            if (current.includes(area)) {
+                const next = current.filter((item) => item !== area);
+                return next.length ? next : allAreas;
+            }
+            return [...current, area];
+        });
+    };
+
+    const costBounds = useMemo(() => {
+        const costs = data.map((club) => club.costPerformance).filter((value) => value != null);
+        return {
+            min: costs.length ? Math.floor(Math.min(...costs) * 10) / 10 : -1,
+            max: costs.length ? Math.ceil(Math.max(...costs) * 10) / 10 : 1
+        };
+    }, [data]);
 
     const searchOptions = useMemo(
         () => data.map((club) => club.club).sort((a, b) => a.localeCompare(b, "ja")),
@@ -148,14 +178,19 @@ function App() {
     const filteredData = useMemo(() => {
         return data.filter((club) => {
             if (club.playerCount < minPlayers) return false;
+            if (!selectedAreas.includes(club.normalizedArea)) return false;
+            if (costRange && (
+                club.costPerformance < costRange[0] ||
+                club.costPerformance > costRange[1]
+            )) return false;
             if (searchText) {
-                const q = searchText.toLowerCase();
-                const matchClub = club.club.toLowerCase().includes(q);
+                const q = normalizeSearchText(searchText);
+                const matchClub = normalizeSearchText(club.club).includes(q);
                 if (!matchClub) return false;
             }
             return true;
         });
-    }, [data, minPlayers, searchText]);
+    }, [data, minPlayers, searchText, costRange, selectedAreas]);
 
     const totalClubs = data.length;
     const totalPlayers = players.length;
@@ -201,6 +236,11 @@ function App() {
                     searchOptions={searchOptions}
                     minPlayers={minPlayers}
                     setMinPlayers={setMinPlayers}
+                    costBounds={costBounds}
+                    costRange={costRange}
+                    setCostRange={setCostRange}
+                    draftCostRange={draftCostRange}
+                    setDraftCostRange={setDraftCostRange}
                     matchedCount={filteredData.length}
                     totalCount={totalClubs}
                     totalPlayers={totalPlayers}
@@ -231,6 +271,10 @@ function App() {
                         data={data}
                         players={players}
                         minPlayers={minPlayers}
+                        costRange={costRange}
+                        draftCostRange={draftCostRange}
+                        selectedAreas={selectedAreas}
+                        toggleArea={toggleArea}
                         searchText={searchText}
                         selectedClub={selectedClub}
                         setSelectedClub={setSelectedClub}
