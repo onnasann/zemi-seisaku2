@@ -10,10 +10,26 @@ import Divider from "@mui/material/Divider";
 import { getCountryDisplayName, getCountryFlagCode, positionConfig } from "../data/areas";
 import { CloseIcon, TrophyIcon } from "./Icons";
 
+const POSITION_ORDER = {
+    FW: 0,
+    MF: 1,
+    DF: 2,
+    GK: 3,
+    "FW/MF": 4,
+    "MF/FW": 4
+};
+
 function ClubDetail({ club, players, onClose }) {
     if (!club) return null;
 
     const isHighCost = club.costPerformance > 0;
+    const sortedPlayers = [...players].sort((a, b) => {
+        const positionA = a["ポジション"]?.trim() || "";
+        const positionB = b["ポジション"]?.trim() || "";
+        return (POSITION_ORDER[positionA] ?? Number.MAX_SAFE_INTEGER) -
+            (POSITION_ORDER[positionB] ?? Number.MAX_SAFE_INTEGER);
+    });
+
     return (
         <Drawer
             anchor="right"
@@ -177,7 +193,7 @@ function ClubDetail({ club, players, onClose }) {
                         </Typography>
 
                         <Stack spacing={1}>
-                            {players.map((player, idx) => {
+                            {sortedPlayers.map((player, idx) => {
                                 const rawCountry = player["国"]?.trim() || "";
                                 const flagCode = getCountryFlagCode(rawCountry);
                                 const countryName = getCountryDisplayName(rawCountry);
